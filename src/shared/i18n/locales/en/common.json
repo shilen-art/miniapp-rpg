@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "SHILEN'S HERO"
+  },
+  "debug": {
+    "scene": "Scene",
+    "resources": {
+      "wood": "Wood",
+      "stone": "Stone",
+      "food": "Food",
+      "rubies": "Rubies",
+      "crystals": "Crystals"
+    },
+    "toSettlement": "To settlement",
+    "plus10Wood": "+10 wood"
+  },
+  "telegram": {
+    "hi": "Hi, {{name}}{{username}}"
+  }
+}
+

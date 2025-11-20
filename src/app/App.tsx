@@ -1,20 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import GameStage from '@/game/scenes/GameStage';
-import { useWindowSize } from '@/shared/lib/useWindowSize';
-import { useTelegramWebApp } from '@/telegram';
 import { useGameStore } from '@/game/state/gameStore';
+import { useWindowSize } from '@/shared/lib/useWindowSize';
+import i18n, { detectLanguageFromTelegram, type SupportedLang } from '@/shared/i18n';
+import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
   const { width, height } = useWindowSize();
   const { user } = useTelegramWebApp();
+  const { t } = useTranslation();
 
   const activeScene = useGameStore(state => state.activeScene);
   const resources = useGameStore(state => state.resources);
   const setActiveScene = useGameStore(state => state.setActiveScene);
   const addResource = useGameStore(state => state.addResource);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const lang = detectLanguageFromTelegram(user.language_code);
+    if (lang !== i18n.language) {
+      i18n.changeLanguage(lang).catch(() => {
+        // ignore language change errors
+      });
+    }
+  }, [user]);
+
   const stageWidth = Math.min(width, 540);
+
+  const changeLang = (lang: SupportedLang) => {
+    if (i18n.language === lang) return;
+    i18n.changeLanguage(lang).catch(() => {
+      // ignore language change errors
+    });
+  };
+
+  const langButtons: SupportedLang[] = ['ru', 'en', 'uk'];
 
   return (
     <div
@@ -51,9 +74,10 @@ const App: React.FC = () => {
             pointerEvents: 'none',
           }}
         >
-          {`Hi, ${user.first_name}${
-            user.username ? ` (@${user.username})` : ''
-          }`}
+          {t('telegram.hi', {
+            name: user.first_name,
+            username: user.username ? ` (@${user.username})` : '',
+          })}
         </div>
       )}
 
@@ -73,13 +97,16 @@ const App: React.FC = () => {
           gap: 4,
         }}
       >
-        <div>Scene: {activeScene}</div>
         <div>
-          Wood: {resources.wood} | Stone: {resources.stone}
+          {t('debug.scene')}: {activeScene}
         </div>
         <div>
-          Food: {resources.food} | Rubies: {resources.rubies} | Crystals:{' '}
-          {resources.crystals}
+          {t('debug.resources.wood')}: {resources.wood} | {t('debug.resources.stone')}:{' '}
+          {resources.stone}
+        </div>
+        <div>
+          {t('debug.resources.food')}: {resources.food} | {t('debug.resources.rubies')}:{' '}
+          {resources.rubies} | {t('debug.resources.crystals')}: {resources.crystals}
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
           <button
@@ -93,7 +120,7 @@ const App: React.FC = () => {
             }}
             onClick={() => setActiveScene('settlement')}
           >
-            To settlement
+            {t('debug.toSettlement')}
           </button>
           <button
             type="button"
@@ -106,8 +133,33 @@ const App: React.FC = () => {
             }}
             onClick={() => addResource('wood', 10)}
           >
-            +10 wood
+            {t('debug.plus10Wood')}
           </button>
+        </div>
+
+        {/* переключатель языков */}
+        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+          {langButtons.map(lang => {
+            const isActive = i18n.language === lang;
+            return (
+              <button
+                key={lang}
+                type="button"
+                style={{
+                  fontSize: 10,
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: isActive ? 700 : 400,
+                  opacity: isActive ? 1 : 0.6,
+                }}
+                onClick={() => changeLang(lang)}
+              >
+                {lang.toUpperCase()}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

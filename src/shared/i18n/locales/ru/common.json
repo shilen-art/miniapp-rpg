@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "SHILEN'S HERO"
+  },
+  "debug": {
+    "scene": "Сцена",
+    "resources": {
+      "wood": "Дерево",
+      "stone": "Камень",
+      "food": "Еда",
+      "rubies": "Рубины",
+      "crystals": "Кристаллы"
+    },
+    "toSettlement": "В поселение",
+    "plus10Wood": "+10 дерева"
+  },
+  "telegram": {
+    "hi": "Привет, {{name}}{{username}}"
+  }
+}
+
