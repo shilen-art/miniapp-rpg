@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo \"lint placeholder\""
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "format": "prettier \"src/**/*.{ts,tsx,js,jsx,css,md}\" --write"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,6 +21,15 @@
     "@vitejs/plugin-react-swc": "^3.7.0",
     "typescript": "^5.6.0",
     "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0"
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "eslint-plugin-react": "^7.36.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.0"
   }
 }
