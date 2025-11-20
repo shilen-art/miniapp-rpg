@@ -24,6 +24,14 @@ interface UseTelegramWebAppResult {
   user: TelegramUser | null;
 }
 
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+    };
+  }
+}
+
 export const useTelegramWebApp = (): UseTelegramWebAppResult => {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -33,7 +41,7 @@ export const useTelegramWebApp = (): UseTelegramWebAppResult => {
       return;
     }
 
-    const tg = (window as any).Telegram?.WebApp as TelegramWebApp | undefined;
+    const tg = window.Telegram?.WebApp;
 
     if (!tg) {
       return;
