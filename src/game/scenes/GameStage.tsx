@@ -1,6 +1,6 @@
-import React from 'react';
 import { Stage, Graphics } from '@pixi/react';
 import type { Graphics as PixiGraphics } from 'pixi.js';
+import React from 'react';
 
 interface GameStageProps {
   width: number;
