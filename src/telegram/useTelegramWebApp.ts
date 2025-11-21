@@ -1,29 +1,5 @@
 import { useEffect, useState } from 'react';
 
-export interface TelegramUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
-}
-
-interface TelegramWebApp {
-  initDataUnsafe?: {
-    user?: TelegramUser;
-    [key: string]: unknown;
-  };
-  ready: () => void;
-  expand: () => void;
-  colorScheme?: 'light' | 'dark';
-  themeParams?: Record<string, unknown>;
-}
-
-interface UseTelegramWebAppResult {
-  webApp: TelegramWebApp | null;
-  user: TelegramUser | null;
-}
-
 declare global {
   interface Window {
     Telegram?: {
@@ -32,33 +8,109 @@ declare global {
   }
 }
 
-export const useTelegramWebApp = (): UseTelegramWebAppResult => {
+export interface TelegramUser {
+  id: number;
+  is_bot?: boolean;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
+
+export interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: {
+    user?: TelegramUser;
+    [key: string]: unknown;
+  };
+
+  // state
+  isExpanded?: boolean;
+  isFullscreen?: boolean;
+
+  // layout / UI
+  expand?: () => void;
+  requestFullscreen?: () => void;
+  exitFullscreen?: () => void;
+  disableVerticalSwipes?: () => void;
+  enableVerticalSwipes?: () => void;
+  lockOrientation?: () => void;
+  unlockOrientation?: () => void;
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
+
+  // lifecycle
+  ready?: () => void;
+
+  // events (keep minimal typing, we don't use them heavily yet)
+  onEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
+  offEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
+}
+
+interface UseTelegramWebAppResult {
+  webApp: TelegramWebApp | null;
+  user: TelegramUser | null;
+  isReady: boolean;
+  error: Error | null;
+}
+
+/**
+ * Main hook for working with Telegram Mini App.
+ * - Initializes WebApp
+ * - Expands to full height and requests fullscreen
+ * - Disables vertical swipes
+ * - Locks current orientation
+ * - Sets header/background colors matching the game
+ * - Exposes WebApp instance and current user
+ */
+export function useTelegramWebApp(): UseTelegramWebAppResult {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
     const tg = window.Telegram?.WebApp;
 
     if (!tg) {
+      // not in Telegram environment
+      setWebApp(null);
+      setUser(null);
+      setIsReady(true);
       return;
     }
 
     try {
-      tg.ready();
-      tg.expand();
-    } catch {
-      // ignore Telegram errors
+      // Maximize height inside Telegram
+      tg.expand?.();
+
+      // Request true fullscreen (Bot API 8.0+)
+      tg.requestFullscreen?.();
+
+      // Disable swipe-down closing / gestures
+      tg.disableVerticalSwipes?.();
+
+      // Lock current orientation (portrait when user opened the app)
+      tg.lockOrientation?.();
+
+      // Colors for header / background to better blend with our app
+      tg.setHeaderColor?.('bg_color');
+      tg.setBackgroundColor?.('#101322');
+
+      // Signal to Telegram that the app UI is ready
+      tg.ready?.();
+
+      // Save WebApp instance and user
+      setWebApp(tg);
+      setUser(tg.initDataUnsafe?.user ?? null);
+      setIsReady(true);
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.error('Telegram WebApp init error', err);
+      setError(err);
+      setIsReady(true);
     }
-
-    setWebApp(tg);
-
-    const tgUser = tg.initDataUnsafe?.user ?? null;
-    setUser(tgUser ?? null);
   }, []);
 
-  return { webApp, user };
-};
+  return { webApp, user, isReady, error };
+}
