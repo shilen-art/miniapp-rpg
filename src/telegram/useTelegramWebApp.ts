@@ -93,9 +93,9 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
       // Lock current orientation (portrait when user opened the app)
       tg.lockOrientation?.();
 
-      // Colors for header / background to better blend with our app
-      tg.setHeaderColor?.('bg_color');
-      tg.setBackgroundColor?.('#101322');
+      // set Telegram Mini App colors to yellow for visual check
+      tg.setHeaderColor?.('#ffff00');
+      tg.setBackgroundColor?.('#ffff00');
 
       // Signal to Telegram that the app UI is ready
       tg.ready?.();
