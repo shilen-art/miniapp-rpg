@@ -17,6 +17,13 @@ export interface TelegramUser {
   language_code?: string;
 }
 
+interface SafeAreaInset {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 export interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
@@ -45,6 +52,9 @@ export interface TelegramWebApp {
   // events (keep minimal typing, we don't use them heavily yet)
   onEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
   offEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
+
+  safeAreaInset?: SafeAreaInset;
+  contentSafeAreaInset?: SafeAreaInset;
 }
 
 interface UseTelegramWebAppResult {
@@ -52,6 +62,8 @@ interface UseTelegramWebAppResult {
   user: TelegramUser | null;
   isReady: boolean;
   error: Error | null;
+  safeAreaInset: SafeAreaInset | null;
+  contentSafeAreaInset: SafeAreaInset | null;
 }
 
 /**
@@ -68,6 +80,8 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [safeAreaInset, setSafeAreaInset] = useState<SafeAreaInset | null>(null);
+  const [contentSafeAreaInset, setContentSafeAreaInset] = useState<SafeAreaInset | null>(null);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -76,6 +90,8 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
       // not in Telegram environment
       setWebApp(null);
       setUser(null);
+      setSafeAreaInset(null);
+      setContentSafeAreaInset(null);
       setIsReady(true);
       return;
     }
@@ -102,6 +118,11 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
 
       // Save WebApp instance and user
       setWebApp(tg);
+
+      // read safe area insets from Telegram, if available
+      setSafeAreaInset(tg.safeAreaInset ?? null);
+      setContentSafeAreaInset(tg.contentSafeAreaInset ?? null);
+
       setUser(tg.initDataUnsafe?.user ?? null);
       setIsReady(true);
     } catch (e) {
@@ -112,5 +133,5 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
     }
   }, []);
 
-  return { webApp, user, isReady, error };
+  return { webApp, user, isReady, error, safeAreaInset, contentSafeAreaInset };
 }

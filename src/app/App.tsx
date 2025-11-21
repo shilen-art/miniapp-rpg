@@ -9,8 +9,10 @@ import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
   const { width, height } = useWindowSize();
-  const { user } = useTelegramWebApp();
+  const { user, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
+
+  const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
   const activeScene = useGameStore(state => state.activeScene);
   const resources = useGameStore(state => state.resources);
@@ -52,6 +54,11 @@ const App: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
+        boxSizing: 'border-box',
+        paddingTop: inset.top,
+        paddingRight: inset.right,
+        paddingBottom: inset.bottom,
+        paddingLeft: inset.left,
       }}
     >
       <div
