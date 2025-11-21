@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type SceneId = 'main-menu' | 'settlement' | 'field' | 'dungeon' | 'boss';
+export type SceneId = 'loading' | 'mainPage' | 'main-menu' | 'settlement' | 'field' | 'dungeon' | 'boss';
 
 export type ResourceKey = 'wood' | 'stone' | 'food' | 'rubies' | 'crystals';
 
@@ -31,7 +31,7 @@ const initialResources: Resources = {
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
-  activeScene: 'main-menu',
+  activeScene: 'loading',
   resources: initialResources,
 
   setActiveScene: scene => set({ activeScene: scene }),
@@ -62,7 +62,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   resetGame: () =>
     set({
-      activeScene: 'main-menu',
+      activeScene: 'loading',
       resources: initialResources,
     }),
 }));

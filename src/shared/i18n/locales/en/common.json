@@ -16,6 +16,9 @@
   },
   "telegram": {
     "hi": "Hi, {{name}}{{username}}"
+  },
+  "loading": {
+    "title": "Loading"
   }
 }
 

@@ -16,6 +16,9 @@
   },
   "telegram": {
     "hi": "Привіт, {{name}}{{username}}"
+  },
+  "loading": {
+    "title": "Завантаження"
   }
 }
 

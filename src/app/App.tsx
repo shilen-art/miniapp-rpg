@@ -1,14 +1,13 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import GameStage from '@/game/scenes/GameStage';
+import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
+import MainPage from '@/game/scenes/MainPage/MainPage';
 import { useGameStore } from '@/game/state/gameStore';
-import { useWindowSize } from '@/shared/lib/useWindowSize';
 import i18n, { detectLanguageFromTelegram, type SupportedLang } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
-  const { width, height } = useWindowSize();
   const { user, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
@@ -29,15 +28,6 @@ const App: React.FC = () => {
       });
     }
   }, [user]);
-
-  const stageWidth = Math.min(width, 540);
-
-  // safe drawing area inside Telegram content safe area
-  const safeHeight = Math.max(height - inset.top - inset.bottom, 0);
-  const safeWidth = Math.max(
-    Math.min(stageWidth, width - inset.left - inset.right),
-    0,
-  );
 
   const changeLang = (lang: SupportedLang) => {
     if (i18n.language === lang) return;
@@ -80,8 +70,12 @@ const App: React.FC = () => {
       >
         BUILD: TEST-123
       </div>
-      {safeWidth > 0 && safeHeight > 0 && (
-        <GameStage width={safeWidth} height={safeHeight} />
+      {activeScene === 'loading' && (
+        <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
+      )}
+
+      {activeScene === 'mainPage' && (
+        <MainPage />
       )}
 
       {/* Telegram user overlay */}
