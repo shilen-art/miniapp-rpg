@@ -1,3 +1,14 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* disable scrolling of the main document */
+  overscroll-behavior: none; /* prevent "pull/bounce" at the edges */
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -12,5 +23,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.scrollable {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 

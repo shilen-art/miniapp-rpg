@@ -25,7 +25,7 @@ const GameStage: React.FC<GameStageProps> = ({ width, height }) => {
       width={width}
       height={height}
       options={{
-        backgroundColor: 0x050712,
+        backgroundColor: 0xffffff,
       }}
     >
       <Graphics draw={drawPlatform} />
