@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
-import { useGameStore } from '@/game/state/gameStore';
-import i18n, { detectLanguageFromTelegram, type SupportedLang } from '@/shared/i18n';
+import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
@@ -13,10 +12,7 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const activeScene = useGameStore(state => state.activeScene);
-  const resources = useGameStore(state => state.resources);
-  const setActiveScene = useGameStore(state => state.setActiveScene);
-  const addResource = useGameStore(state => state.addResource);
+  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage'>('loading');
 
   useEffect(() => {
     if (!user) return;
@@ -29,14 +25,6 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  const changeLang = (lang: SupportedLang) => {
-    if (i18n.language === lang) return;
-    i18n.changeLanguage(lang).catch(() => {
-      // ignore language change errors
-    });
-  };
-
-  const langButtons: SupportedLang[] = ['ru', 'en', 'uk'];
 
   return (
     <div
@@ -98,86 +86,6 @@ const App: React.FC = () => {
           })}
         </div>
       )}
-
-      {/* Debug-панель состояния игры (временно, для нас) */}
-      <div
-        style={{
-          position: 'absolute',
-          padding: '8px 10px',
-          borderRadius: 8,
-          backgroundColor: 'rgba(0,0,0,0.6)',
-          color: '#ffffff',
-          fontSize: 11,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-        }}
-      >
-        <div>
-          {t('debug.scene')}: {activeScene}
-        </div>
-        <div>
-          {t('debug.resources.wood')}: {resources.wood} | {t('debug.resources.stone')}:{' '}
-          {resources.stone}
-        </div>
-        <div>
-          {t('debug.resources.food')}: {resources.food} | {t('debug.resources.rubies')}:{' '}
-          {resources.rubies} | {t('debug.resources.crystals')}: {resources.crystals}
-        </div>
-        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-          <button
-            type="button"
-            style={{
-              fontSize: 10,
-              padding: '2px 6px',
-              borderRadius: 4,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onClick={() => setActiveScene('settlement')}
-          >
-            {t('debug.toSettlement')}
-          </button>
-          <button
-            type="button"
-            style={{
-              fontSize: 10,
-              padding: '2px 6px',
-              borderRadius: 4,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onClick={() => addResource('wood', 10)}
-          >
-            {t('debug.plus10Wood')}
-          </button>
-        </div>
-
-        {/* переключатель языков */}
-        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-          {langButtons.map(lang => {
-            const isActive = i18n.language === lang;
-            return (
-              <button
-                key={lang}
-                type="button"
-                style={{
-                  fontSize: 10,
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: isActive ? 700 : 400,
-                  opacity: isActive ? 1 : 0.6,
-                }}
-                onClick={() => changeLang(lang)}
-              >
-                {lang.toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 };
