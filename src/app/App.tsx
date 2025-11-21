@@ -54,6 +54,18 @@ const App: React.FC = () => {
         position: 'relative',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          right: 8,
+          fontSize: 10,
+          color: '#ff5555',
+          zIndex: 9999,
+        }}
+      >
+        BUILD: TEST-123
+      </div>
       {stageWidth > 0 && height > 0 && (
         <GameStage width={stageWidth} height={height} />
       )}
