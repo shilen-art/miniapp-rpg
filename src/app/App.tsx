@@ -89,8 +89,6 @@ const App: React.FC = () => {
         <div
           style={{
             position: 'absolute',
-            top: 12,
-            left: 12,
             padding: '6px 10px',
             borderRadius: 8,
             backgroundColor: 'rgba(0,0,0,0.5)',
@@ -111,8 +109,6 @@ const App: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: 12,
-          right: 12,
           padding: '8px 10px',
           borderRadius: 8,
           backgroundColor: 'rgba(0,0,0,0.6)',
