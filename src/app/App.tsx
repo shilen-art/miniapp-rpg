@@ -32,6 +32,13 @@ const App: React.FC = () => {
 
   const stageWidth = Math.min(width, 540);
 
+  // safe drawing area inside Telegram content safe area
+  const safeHeight = Math.max(height - inset.top - inset.bottom, 0);
+  const safeWidth = Math.max(
+    Math.min(stageWidth, width - inset.left - inset.right),
+    0,
+  );
+
   const changeLang = (lang: SupportedLang) => {
     if (i18n.language === lang) return;
     i18n.changeLanguage(lang).catch(() => {
@@ -73,8 +80,8 @@ const App: React.FC = () => {
       >
         BUILD: TEST-123
       </div>
-      {stageWidth > 0 && height > 0 && (
-        <GameStage width={stageWidth} height={height} />
+      {safeWidth > 0 && safeHeight > 0 && (
+        <GameStage width={safeWidth} height={safeHeight} />
       )}
 
       {/* Telegram user overlay */}
