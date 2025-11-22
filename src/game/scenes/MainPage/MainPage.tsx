@@ -1,7 +1,12 @@
 import React from 'react';
+import { Stage } from '@pixi/react';
 import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
+import { useWindowSize } from '@/shared/lib/useWindowSize';
+import FirefliesLayer from '@/shared/effects/FirefliesLayer';
 
 const MainPage: React.FC = () => {
+  const { width, height } = useWindowSize();
+
   return (
     <div
       style={{
@@ -22,6 +27,24 @@ const MainPage: React.FC = () => {
           backgroundRepeat: 'no-repeat',
         }}
       />
+
+      {/* Fireflies effect layer */}
+      <Stage
+        width={width}
+        height={height}
+        options={{
+          backgroundAlpha: 0,
+          antialias: true,
+        }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      >
+        <FirefliesLayer width={width} height={height} count={22} />
+      </Stage>
 
       {/* Bottom navigation menu */}
       <div
