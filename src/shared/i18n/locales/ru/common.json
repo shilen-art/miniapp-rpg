@@ -19,6 +19,25 @@
   },
   "loading": {
     "title": "Загрузка"
+  },
+  "main": {
+    "nav": {
+      "heroes": "Герои",
+      "button1": "Button 1",
+      "button3": "Button 3",
+      "button4": "Button 4",
+      "button5": "Button 5"
+    }
+  },
+  "heroes": {
+    "title": "Герои",
+    "back": "Назад",
+    "squad": "Отряд",
+    "rarity": {
+      "legend": "Легендарные",
+      "unique": "Уникальные",
+      "rare": "Рарные"
+    }
   }
 }
 

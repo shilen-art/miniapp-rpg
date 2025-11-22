@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
+import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
+import { HEROES_REGISTRY, HeroId } from '@/game/heroes/registry';
 
 const App: React.FC = () => {
   const { user, contentSafeAreaInset } = useTelegramWebApp();
@@ -12,7 +14,12 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage'>('loading');
+  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
+
+  // Отряд (макс 4). Пока дефолтно 4 героя.
+  const [squad, setSquad] = useState<HeroId[]>(['shilen', 'hot', 'pasha', 'skeleton']);
+
+  const heroes = useMemo(() => HEROES_REGISTRY, []);
 
   useEffect(() => {
     if (!user) return;
@@ -24,7 +31,6 @@ const App: React.FC = () => {
       });
     }
   }, [user]);
-
 
   return (
     <div
@@ -67,12 +73,26 @@ const App: React.FC = () => {
         >
           BUILD: TEST-123
         </div>
+
         {activeScene === 'loading' && (
           <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
         )}
 
         {activeScene === 'mainPage' && (
-          <MainPage />
+          <MainPage
+            heroes={heroes}
+            squad={squad}
+            onOpenHeroes={() => setActiveScene('heroesPage')}
+          />
+        )}
+
+        {activeScene === 'heroesPage' && (
+          <HeroesPage
+            heroes={heroes}
+            squad={squad}
+            onBack={() => setActiveScene('mainPage')}
+            onChangeSquad={setSquad} // позже добавим логику кликов
+          />
         )}
 
         {/* Telegram user overlay */}

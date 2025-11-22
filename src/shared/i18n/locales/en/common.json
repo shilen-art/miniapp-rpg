@@ -19,6 +19,25 @@
   },
   "loading": {
     "title": "Loading"
+  },
+  "main": {
+    "nav": {
+      "heroes": "Heroes",
+      "button1": "Button 1",
+      "button3": "Button 3",
+      "button4": "Button 4",
+      "button5": "Button 5"
+    }
+  },
+  "heroes": {
+    "title": "Heroes",
+    "back": "Back",
+    "squad": "Squad",
+    "rarity": {
+      "legend": "Legendary",
+      "unique": "Unique",
+      "rare": "Rare"
+    }
   }
 }
 
