@@ -1,12 +1,11 @@
-import React, { useMemo } from 'react';
 import { Stage, Container } from '@pixi/react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
-import { useWindowSize } from '@/shared/lib/useWindowSize';
-import FirefliesLayer from '@/shared/effects/FirefliesLayer';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { HeroDef, HeroId } from '@/game/heroes/registry';
+import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
+import FirefliesLayer from '@/shared/effects/FirefliesLayer';
 
 type Props = {
   heroes: HeroDef[];
@@ -15,8 +14,21 @@ type Props = {
 };
 
 const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
-  const { width, height } = useWindowSize();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const update = () => {
+      if (!rootRef.current) return;
+      const r = rootRef.current.getBoundingClientRect();
+      setStageSize({ w: r.width, h: r.height });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const heroMap = useMemo(() => {
     const map = new Map<HeroId, HeroDef>();
@@ -27,12 +39,12 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
   // Временные позиции под подиум (потом подгоним)
   const squadPositions = useMemo(
     () => [
-      { x: width * 0.22, y: height * 0.67 },
-      { x: width * 0.40, y: height * 0.64 },
-      { x: width * 0.60, y: height * 0.64 },
-      { x: width * 0.78, y: height * 0.67 },
+      { x: stageSize.w * 0.22, y: stageSize.h * 0.67 },
+      { x: stageSize.w * 0.40, y: stageSize.h * 0.64 },
+      { x: stageSize.w * 0.60, y: stageSize.h * 0.64 },
+      { x: stageSize.w * 0.78, y: stageSize.h * 0.67 },
     ],
-    [width, height]
+    [stageSize.w, stageSize.h]
   );
 
   const rootStyle: React.CSSProperties = {
@@ -98,18 +110,18 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
   };
 
   return (
-    <div style={rootStyle}>
+    <div ref={rootRef} style={rootStyle}>
       {/* Background layer */}
       <div style={bgStyle} />
 
       {/* Pixi overlay: fireflies + squad */}
       <Stage
-        width={width}
-        height={height}
+        width={stageSize.w}
+        height={stageSize.h}
         options={{ backgroundAlpha: 0, antialias: true }}
         style={stageStyle}
       >
-        <FirefliesLayer width={width} height={height} count={18} />
+        <FirefliesLayer width={stageSize.w} height={stageSize.h} count={18} />
 
         <Container>
           {squad.map((id, i) => {

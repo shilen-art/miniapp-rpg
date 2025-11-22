@@ -37,7 +37,7 @@ const App: React.FC = () => {
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#000',
+        background: '#07121b',
         display: 'flex',
         justifyContent: 'center',
       }}
@@ -45,7 +45,7 @@ const App: React.FC = () => {
       <div
         style={{
           width: '100%',
-          maxWidth: '780px',
+          maxWidth: '560px',
           height: '100%',
           position: 'relative',
           margin: '0 auto',

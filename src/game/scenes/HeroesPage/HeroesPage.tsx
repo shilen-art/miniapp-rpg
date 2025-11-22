@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Stage, Container } from '@pixi/react';
 import { useTranslation } from 'react-i18next';
 
-import { useWindowSize } from '@/shared/lib/useWindowSize';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { HeroDef, HeroId, Rarity } from '@/game/heroes/registry';
 
@@ -21,8 +20,21 @@ const rarityBg: Record<Rarity, string> = {
 };
 
 const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
-  const { width, height } = useWindowSize();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const update = () => {
+      if (!rootRef.current) return;
+      const r = rootRef.current.getBoundingClientRect();
+      setStageSize({ w: r.width, h: r.height });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const groups = useMemo(() => {
     const map: Record<Rarity, HeroDef[]> = { legend: [], unique: [], rare: [] };
@@ -30,12 +42,13 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
     return map;
   }, [heroes]);
 
-  const cellSize = Math.min(160, Math.floor(width / 4) - 12);
+  const cellSize = Math.min(160, Math.floor(stageSize.w / 4) - 12);
   const padding = 12;
   const topSquadHeight = cellSize + 60;
 
   return (
     <div
+      ref={rootRef}
       style={{
         position: 'relative',
         width: '100%',
@@ -98,7 +111,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
 
         <div style={{ position: 'relative', width: '100%', height: cellSize + 10 }}>
           <Stage
-            width={width - padding * 2}
+            width={stageSize.w - padding * 2}
             height={cellSize + 10}
             options={{ backgroundAlpha: 0 }}
             style={{ position: 'absolute', inset: 0 }}
@@ -108,7 +121,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
                 const h = heroes.find((x) => x.id === id);
                 if (!h) return null;
 
-                const x = (i + 0.5) * ((width - padding * 2) / 4);
+                const x = (i + 0.5) * ((stageSize.w - padding * 2) / 4);
                 const y = (cellSize + 10) / 2;
 
                 return (
