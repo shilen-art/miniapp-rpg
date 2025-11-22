@@ -31,61 +31,71 @@ const App: React.FC = () => {
       style={{
         width: '100vw',
         height: '100vh',
-        margin: 0,
-        padding: 0,
-        overflow: 'hidden',
-        backgroundColor: '#050712',
+        background: '#000',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        boxSizing: 'border-box',
-        paddingTop: inset.top,
-        paddingRight: inset.right,
-        paddingBottom: inset.bottom,
-        paddingLeft: inset.left,
       }}
     >
       <div
         style={{
-          position: 'absolute',
-          bottom: 8,
-          right: 8,
-          fontSize: 10,
-          color: '#ff5555',
-          zIndex: 9999,
+          width: '100%',
+          maxWidth: '780px',
+          height: '100%',
+          position: 'relative',
+          margin: '0 auto',
+          overflow: 'hidden',
+          backgroundColor: '#050712',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          boxSizing: 'border-box',
+          paddingTop: inset.top,
+          paddingRight: inset.right,
+          paddingBottom: inset.bottom,
+          paddingLeft: inset.left,
         }}
       >
-        BUILD: TEST-123
-      </div>
-      {activeScene === 'loading' && (
-        <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
-      )}
-
-      {activeScene === 'mainPage' && (
-        <MainPage />
-      )}
-
-      {/* Telegram user overlay */}
-      {user && (
         <div
           style={{
             position: 'absolute',
-            padding: '6px 10px',
-            borderRadius: 8,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            color: '#ffffff',
-            fontSize: 12,
-            maxWidth: '60%',
-            pointerEvents: 'none',
+            bottom: 8,
+            right: 8,
+            fontSize: 10,
+            color: '#ff5555',
+            zIndex: 9999,
           }}
         >
-          {t('telegram.hi', {
-            name: user.first_name,
-            username: user.username ? ` (@${user.username})` : '',
-          })}
+          BUILD: TEST-123
         </div>
-      )}
+        {activeScene === 'loading' && (
+          <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
+        )}
+
+        {activeScene === 'mainPage' && (
+          <MainPage />
+        )}
+
+        {/* Telegram user overlay */}
+        {user && (
+          <div
+            style={{
+              position: 'absolute',
+              padding: '6px 10px',
+              borderRadius: 8,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              color: '#ffffff',
+              fontSize: 12,
+              maxWidth: '60%',
+              pointerEvents: 'none',
+            }}
+          >
+            {t('telegram.hi', {
+              name: user.first_name,
+              username: user.username ? ` (@${user.username})` : '',
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
