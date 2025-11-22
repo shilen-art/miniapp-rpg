@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatedSprite } from '@pixi/react';
 import * as PIXI from 'pixi.js';
 
@@ -12,6 +12,7 @@ type Props = {
   x?: number;
   y?: number;
   speed?: number;
+  zIndex?: number;
 };
 
 export default function HeroIdleSprite({
@@ -24,6 +25,7 @@ export default function HeroIdleSprite({
   x = 0,
   y = 0,
   speed = 0.28,
+  zIndex = 0,
 }: Props) {
   const [ready, setReady] = useState(false);
   const [baseTexture, setBaseTexture] = useState<PIXI.BaseTexture | null>(null);
@@ -48,7 +50,6 @@ export default function HeroIdleSprite({
   const textures = useMemo(() => {
     if (!baseTexture || !ready) return [];
 
-    const base = new PIXI.Texture(baseTexture);
     const cols = Math.max(1, columns);
     const rows = Math.ceil(frames / cols);
 
@@ -83,6 +84,7 @@ export default function HeroIdleSprite({
       y={y}
       anchor={anchor}
       scale={scale}
+      zIndex={zIndex}
     />
   );
 }

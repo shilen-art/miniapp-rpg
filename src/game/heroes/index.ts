@@ -1,2 +1,1 @@
-// Heroes logic placeholder
-
+export * from './registry';

@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
-import { HeroDef, HeroId } from '@/game/heroes/registry';
+import { HeroDef, HeroId } from '@/game/heroes';
 import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
 import FirefliesLayer from '@/shared/effects/FirefliesLayer';
 
@@ -19,6 +19,8 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (!rootRef.current) return;
+
     const update = () => {
       if (!rootRef.current) return;
       const r = rootRef.current.getBoundingClientRect();
@@ -26,8 +28,15 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
     };
 
     update();
+
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(rootRef.current);
+
     window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', update);
+    };
   }, []);
 
   const heroMap = useMemo(() => {
@@ -36,7 +45,6 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
     return map;
   }, [heroes]);
 
-  // Временные позиции под подиум (потом подгоним)
   const squadPositions = useMemo(
     () => [
       { x: stageSize.w * 0.22, y: stageSize.h * 0.67 },
@@ -123,23 +131,30 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
       >
         <FirefliesLayer width={stageSize.w} height={stageSize.h} count={18} />
 
-        <Container>
+        <Container sortableChildren>
           {squad.map((id, i) => {
             const h = heroMap.get(id);
             const p = squadPositions[i];
             if (!h || !p) return null;
 
+            const idle = h.sprites.idle;
+
+            // left/right (0 and 3) → zIndex=2
+            // middle ones (1 and 2) → zIndex=1
+            const z = (i === 0 || i === 3) ? 2 : 1;
+
             return (
               <HeroIdleSprite
                 key={id}
-                src={h.idleSrc}
-                frames={h.frames}
-                frameSize={h.frameSize}
-                columns={h.columns}
-                x={p.x}
-                y={p.y}
-                scale={1}   // <= размер на главной
-                speed={0.28}   // <= скорость idle
+                src={idle.src}
+                frames={idle.frames}
+                frameSize={idle.frameSize}
+                columns={idle.columns}
+                x={p.x + (idle.offset?.x ?? 0)}
+                y={p.y + (idle.offset?.y ?? 0)}
+                scale={idle.scale ?? 1}
+                speed={idle.speed ?? 0.28}
+                zIndex={z}
               />
             );
           })}

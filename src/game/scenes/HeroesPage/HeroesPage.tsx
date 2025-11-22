@@ -1,15 +1,96 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { Stage, Container } from '@pixi/react';
+import { Stage } from '@pixi/react';
 import { useTranslation } from 'react-i18next';
 
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
-import { HeroDef, HeroId, Rarity } from '@/game/heroes/registry';
+import { HeroDef, HeroId, Rarity } from '@/game/heroes';
+
+type HeroCardProps = {
+  hero: HeroDef;
+  cellSize: number;
+  rarityBg: string;
+  selected: boolean;
+  onClick?: () => void;
+  showName?: boolean;
+};
+
+const HeroCard: React.FC<HeroCardProps> = ({
+  hero,
+  cellSize,
+  rarityBg,
+  selected,
+  onClick,
+  showName = true,
+}) => {
+  const idle = hero.sprites.idle;
+  const HERO_SHIFT = { x: -8, y: -10 };
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: rarityBg,
+        borderRadius: 12,
+        padding: 6,
+        cursor: 'pointer',
+        border: selected ? '3px solid #fff' : 'none',
+        height: showName ? cellSize + 34 : cellSize + 12,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ position: 'relative', width: '100%', height: cellSize }}>
+        {hero.owned ? (
+          <Stage
+            width={cellSize}
+            height={cellSize}
+            options={{ backgroundAlpha: 0 }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <HeroIdleSprite
+              src={idle.src}
+              frames={idle.frames}
+              frameSize={idle.frameSize}
+              columns={idle.columns}
+              x={(cellSize / 2) + HERO_SHIFT.x + (idle.offset?.x ?? 0)}
+              y={(cellSize / 2) + HERO_SHIFT.y + (idle.offset?.y ?? 0)}
+              scale={idle.scale ?? (cellSize / 256 * 1.5)}
+              speed={idle.speed ?? 0.28}
+            />
+          </Stage>
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: 8,
+              background: 'rgba(16, 4, 4, 0.25)',
+            }}
+          />
+        )}
+      </div>
+
+      {showName !== false && (
+        <div
+          style={{
+            marginTop: 4,
+            textAlign: 'center',
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#fff',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+          }}
+        >
+          {hero.name}
+        </div>
+      )}
+    </div>
+  );
+};
 
 type Props = {
   heroes: HeroDef[];
   squad: HeroId[];
   onBack: () => void;
-  onChangeSquad: (next: HeroId[]) => void; // пока не используем, оставляем
+  onChangeSquad: (next: HeroId[]) => void;
 };
 
 const rarityOrder: Rarity[] = ['legend', 'unique', 'rare'];
@@ -19,12 +100,14 @@ const rarityBg: Record<Rarity, string> = {
   rare: '#3498db',
 };
 
-const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
+const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (!rootRef.current) return;
+
     const update = () => {
       if (!rootRef.current) return;
       const r = rootRef.current.getBoundingClientRect();
@@ -32,8 +115,15 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
     };
 
     update();
+
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(rootRef.current);
+
     window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', update);
+    };
   }, []);
 
   const groups = useMemo(() => {
@@ -42,9 +132,20 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
     return map;
   }, [heroes]);
 
-  const cellSize = Math.min(160, Math.floor(stageSize.w / 4) - 12);
+  const safeW = Math.max(1, stageSize.w);
+  const cellSize = Math.min(160, Math.floor(safeW / 4) - 12);
   const padding = 12;
   const topSquadHeight = cellSize + 60;
+
+  const handleHeroClick = (heroId: HeroId) => {
+    const isInSquad = squad.includes(heroId);
+    
+    if (isInSquad) {
+      onChangeSquad(squad.filter((id) => id !== heroId));
+    } else if (squad.length < 4) {
+      onChangeSquad([...squad, heroId]);
+    }
+  };
 
   return (
     <div
@@ -109,37 +210,22 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
           {t('heroes.squad')}
         </div>
 
-        <div style={{ position: 'relative', width: '100%', height: cellSize + 10 }}>
-          <Stage
-            width={stageSize.w - padding * 2}
-            height={cellSize + 10}
-            options={{ backgroundAlpha: 0 }}
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <Container>
-              {squad.map((id, i) => {
-                const h = heroes.find((x) => x.id === id);
-                if (!h) return null;
-
-                const x = (i + 0.5) * ((stageSize.w - padding * 2) / 4);
-                const y = (cellSize + 10) / 2;
-
-                return (
-                  <HeroIdleSprite
-                    key={id}
-                    src={h.idleSrc}
-                    frames={h.frames}
-                    frameSize={h.frameSize}
-                    columns={h.columns}
-                    x={x}
-                    y={y}
-                    scale={cellSize / 256 * 0.9}
-                    speed={0.14}
-                  />
-                );
-              })}
-            </Container>
-          </Stage>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {squad.map(id => {
+            const hero = heroes.find(h => h.id === id);
+            if (!hero) return null;
+            return (
+              <HeroCard
+                key={id}
+                hero={hero}
+                cellSize={cellSize}
+                rarityBg={rarityBg[hero.rarity]}
+                selected={true}
+                showName={true}
+                onClick={() => onChangeSquad(squad.filter(x => x !== id))}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -176,63 +262,20 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
                 gap: 10,
               }}
             >
-              {groups[rar].map((h) => (
-                <div
-                  key={h.id}
-                  style={{
-                    background: rarityBg[rar],
-                    borderRadius: 12,
-                    padding: 6,
-                    height: cellSize + 34,
-                    boxSizing: 'border-box',
-                    position: 'relative',
-                  }}
-                >
-                  <div style={{ position: 'relative', width: '100%', height: cellSize }}>
-                    {h.owned ? (
-                      <Stage
-                        width={cellSize}
-                        height={cellSize}
-                        options={{ backgroundAlpha: 0 }}
-                        style={{ position: 'absolute', inset: 0 }}
-                      >
-                        <HeroIdleSprite
-                          src={h.idleSrc}
-                          frames={h.frames}
-                          frameSize={h.frameSize}
-                          columns={h.columns}
-                          x={cellSize / 2}
-                          y={cellSize / 2}
-                          scale={cellSize / 256}
-                          speed={0.14}
-                        />
-                      </Stage>
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: 8,
-                          background: 'rgba(0,0,0,0.25)',
-                        }}
-                      />
-                    )}
-                  </div>
+              {groups[rar].map((h) => {
+                const isInSquad = squad.includes(h.id);
 
-                  <div
-                    style={{
-                      marginTop: 4,
-                      textAlign: 'center',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#fff',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                    }}
-                  >
-                    {h.name}
-                  </div>
-                </div>
-              ))}
+                return (
+                  <HeroCard
+                    key={h.id}
+                    hero={h}
+                    cellSize={cellSize}
+                    rarityBg={rarityBg[rar]}
+                    selected={isInSquad}
+                    onClick={() => handleHeroClick(h.id)}
+                  />
+                );
+              })}
             </div>
           </div>
         ))}
@@ -242,4 +285,3 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack }) => {
 };
 
 export default HeroesPage;
-

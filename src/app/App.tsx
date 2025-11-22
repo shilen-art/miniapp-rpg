@@ -6,7 +6,7 @@ import MainPage from '@/game/scenes/MainPage/MainPage';
 import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
-import { HEROES_REGISTRY, HeroId } from '@/game/heroes/registry';
+import { HEROES_REGISTRY, HeroId } from '@/game/heroes';
 
 const App: React.FC = () => {
   const { user, contentSafeAreaInset } = useTelegramWebApp();
@@ -14,21 +14,24 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
-
-  // Отряд (макс 4). Пока дефолтно 4 героя.
-  const [squad, setSquad] = useState<HeroId[]>(['shilen', 'hot', 'pasha', 'skeleton']);
+  const [activeScene, setActiveScene] =
+    useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
 
   const heroes = useMemo(() => HEROES_REGISTRY, []);
+
+  const [squad, setSquad] = useState<HeroId[]>([
+    'shilen',
+    'hot',
+    'pasha',
+    'skeleton',
+  ]);
 
   useEffect(() => {
     if (!user) return;
 
     const lang = detectLanguageFromTelegram(user.language_code);
     if (lang !== i18n.language) {
-      i18n.changeLanguage(lang).catch(() => {
-        // ignore language change errors
-      });
+      i18n.changeLanguage(lang).catch(() => {});
     }
   }, [user]);
 
@@ -37,7 +40,7 @@ const App: React.FC = () => {
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#07121b',
+        background: '#000',
         display: 'flex',
         justifyContent: 'center',
       }}
@@ -91,11 +94,10 @@ const App: React.FC = () => {
             heroes={heroes}
             squad={squad}
             onBack={() => setActiveScene('mainPage')}
-            onChangeSquad={setSquad} // позже добавим логику кликов
+            onChangeSquad={setSquad}
           />
         )}
 
-        {/* Telegram user overlay */}
         {user && (
           <div
             style={{
