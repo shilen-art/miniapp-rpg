@@ -1,4 +1,5 @@
 import React from 'react';
+import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
 
 const MainPage: React.FC = () => {
   return (
@@ -6,12 +7,189 @@ const MainPage: React.FC = () => {
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: '#050712',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* placeholder, will be replaced with real main page UI */}
+      {/* Background layer */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url(${mainBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+
+      {/* Bottom navigation menu */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          height: 96,
+          background: 'rgba(20,20,20,0.9)',
+          borderRadius: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 12,
+          gap: 8,
+        }}
+      >
+        {/* Button 1 */}
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: '#666',
+              borderRadius: 10,
+            }}
+          />
+          <span>Button 1</span>
+        </button>
+
+        {/* Button 2 */}
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: '#666',
+              borderRadius: 10,
+            }}
+          />
+          <span>Button 2</span>
+        </button>
+
+        {/* Button 3 */}
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: '#666',
+              borderRadius: 10,
+            }}
+          />
+          <span>Button 3</span>
+        </button>
+
+        {/* Button 4 */}
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: '#666',
+              borderRadius: 10,
+            }}
+          />
+          <span>Button 4</span>
+        </button>
+
+        {/* Button 5 */}
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: '#666',
+              borderRadius: 10,
+            }}
+          />
+          <span>Button 5</span>
+        </button>
+      </div>
     </div>
   );
 };
