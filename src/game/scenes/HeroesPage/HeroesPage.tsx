@@ -1,10 +1,10 @@
 import { Stage } from '@pixi/react';
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { getBaseStats, getCritPercent } from '@/game/heroes/calc';
 import { HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
-
 
 type HeroCardProps = {
   hero: HeroDef;
@@ -25,6 +25,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
 }) => {
   const idle = hero.sprites.idle;
   const HERO_SHIFT = { x: -8, y: -10 };
+  const stats = hero.owned ? getBaseStats(hero, 1) : null;
+  const hasStats = hero.owned && stats !== null;
+  const extraHeight = hasStats ? 20 : 0;
 
   return (
     <div
@@ -35,7 +38,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
         padding: 6,
         cursor: 'pointer',
         border: selected ? '3px solid #fff' : 'none',
-        height: showName ? cellSize + 34 : cellSize + 12,
+        height: showName ? cellSize + 34 + extraHeight : cellSize + 12,
         boxSizing: 'border-box',
       }}
     >
@@ -71,17 +74,47 @@ const HeroCard: React.FC<HeroCardProps> = ({
       </div>
 
       {showName !== false && (
-        <div
-          style={{
-            marginTop: 4,
-            textAlign: 'center',
-            fontSize: 12,
-            fontWeight: 700,
-            color: '#fff',
-            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-          }}
-        >
-          {hero.name}
+        <div>
+          <div
+            style={{
+              marginTop: 4,
+              textAlign: 'center',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+            }}
+          >
+            {hero.name}
+          </div>
+          {hasStats && stats && (
+            <>
+              <div
+                style={{
+                  marginTop: 2,
+                  textAlign: 'center',
+                  fontSize: 10,
+                  color: '#fff',
+                  opacity: 0.9,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                }}
+              >
+                ATK {stats.attack} • HP {stats.hp} • DEF {stats.defense}
+              </div>
+              <div
+                style={{
+                  marginTop: 2,
+                  textAlign: 'center',
+                  fontSize: 10,
+                  color: '#fff',
+                  opacity: 0.9,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                }}
+              >
+                CRIT {getCritPercent(stats)}% • RNG {stats.range}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -106,9 +139,11 @@ type HeroRuntime = HeroDef & {
   isHero?: boolean;
   rank?: unknown;
 
-  // legacy / runtime поля
+  // legacy поле (если где-то осталась старая rarity)
   rarity?: unknown;
-  balance?: BalanceLike;
+
+  // balance обязателен, но внутри rarity может быть unknown
+  balance: HeroDef['balance'] & BalanceLike;
 };
 
 const normalizeRarity = (r: unknown): UiRarity => {
@@ -134,7 +169,7 @@ const getHeroRarity = (hero: HeroDef): UiRarity => {
     return 'hero';
   }
 
-  const base = h.balance?.rarity ?? h.rarity;
+  const base = h.balance.rarity ?? h.rarity;
   return normalizeRarity(base);
 };
 
