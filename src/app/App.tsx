@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HEROES_REGISTRY, HeroDef } from '@/game/heroes/registry';
 import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
-import { HEROES_REGISTRY, HeroId, HeroDef } from '@/game/heroes/registry';
+import { useGameStore } from '@/game/state';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
@@ -16,13 +17,8 @@ const App: React.FC = () => {
 
   const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
 
-  // дефолтный отряд
-  const [squad, setSquad] = useState<HeroId[]>([
-    'shilen',
-    'hot',
-    'pasha',
-    'skeleton',
-  ]);
+  const squad = useGameStore((s) => s.squad);
+  const setSquad = useGameStore((s) => s.setSquad);
 
   const heroes = useMemo<HeroDef[]>(() => [...HEROES_REGISTRY], []);
 

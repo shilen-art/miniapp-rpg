@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getBaseStats, getCritPercent } from '@/game/heroes/calc';
 import { HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
+import { useGameStore } from '@/game/state';
 
 type HeroCardProps = {
   hero: HeroDef;
@@ -13,6 +14,8 @@ type HeroCardProps = {
   selected: boolean;
   onClick?: () => void;
   showName?: boolean;
+  owned: boolean;
+  level?: number;
 };
 
 const HeroCard: React.FC<HeroCardProps> = ({
@@ -22,11 +25,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
   selected,
   onClick,
   showName = true,
+  owned,
+  level,
 }) => {
   const idle = hero.sprites.idle;
   const HERO_SHIFT = { x: -8, y: -10 };
-  const stats = hero.owned ? getBaseStats(hero, 1) : null;
-  const hasStats = hero.owned && stats !== null;
+  const stats = owned ? getBaseStats(hero, level ?? 1) : null;
+  const hasStats = owned;
   const extraHeight = hasStats ? 20 : 0;
 
   return (
@@ -43,7 +48,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
       }}
     >
       <div style={{ position: 'relative', width: '100%', height: cellSize }}>
-        {hero.owned ? (
+        {owned ? (
           <Stage
             width={cellSize}
             height={cellSize}
@@ -130,10 +135,6 @@ type Props = {
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
 
-type BalanceLike = {
-  rarity?: unknown;
-};
-
 type HeroRuntime = HeroDef & {
   // временные флаги без стора
   isHero?: boolean;
@@ -141,9 +142,6 @@ type HeroRuntime = HeroDef & {
 
   // legacy поле (если где-то осталась старая rarity)
   rarity?: unknown;
-
-  // balance обязателен, но внутри rarity может быть unknown
-  balance: HeroDef['balance'] & BalanceLike;
 };
 
 const normalizeRarity = (r: unknown): UiRarity => {
@@ -162,10 +160,10 @@ const normalizeRarity = (r: unknown): UiRarity => {
   return 'rare';
 };
 
-const getHeroRarity = (hero: HeroDef): UiRarity => {
+const getHeroRarity = (hero: HeroDef, storeHero?: { isHero?: boolean }): UiRarity => {
   const h = hero as HeroRuntime;
 
-  if (h.isHero === true || String(h.rank ?? '').toLowerCase() === 'hero') {
+  if (storeHero?.isHero === true || h.isHero === true || String(h.rank ?? '').toLowerCase() === 'hero') {
     return 'hero';
   }
 
@@ -187,6 +185,9 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
+
+  const isOwned = useGameStore((s) => s.isOwned);
+  const heroesOwnedMap = useGameStore((s) => s.heroes);
 
   useEffect(() => {
     const update = () => {
@@ -223,12 +224,13 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
     };
 
     heroes.forEach((h) => {
-      const rar = getHeroRarity(h);
+      const storeHero = heroesOwnedMap[h.id];
+      const rar = getHeroRarity(h, storeHero);
       map[rar].push(h);
     });
 
     return map;
-  }, [heroes]);
+  }, [heroes, heroesOwnedMap]);
 
   const safeW = Math.max(1, stageSize.w);
   const cellSize = Math.min(160, Math.floor(safeW / 4) - 12);
@@ -240,7 +242,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
 
     if (isInSquad) {
       onChangeSquad(squad.filter((id) => id !== heroId));
-    } else if (squad.length < 4) {
+    } else if (squad.length < 4 && isOwned(heroId)) {
       onChangeSquad([...squad, heroId]);
     }
   };
@@ -313,7 +315,10 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
             const hero = heroes.find((h) => h.id === id);
             if (!hero) return null;
 
-            const rar = getHeroRarity(hero);
+            const storeHero = heroesOwnedMap[id];
+            const rar = getHeroRarity(hero, storeHero);
+            const owned = isOwned(id);
+            const level = storeHero?.level ?? 1;
 
             return (
               <HeroCard
@@ -323,6 +328,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
                 rarityBg={rarityBg[rar]}
                 selected
                 showName
+                owned={owned}
+                level={level}
                 onClick={() => onChangeSquad(squad.filter((x) => x !== id))}
               />
             );
@@ -369,7 +376,10 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
               >
                 {list.map((h) => {
                   const isInSquad = squad.includes(h.id);
-                  const hr = getHeroRarity(h);
+                  const storeHero = heroesOwnedMap[h.id];
+                  const hr = getHeroRarity(h, storeHero);
+                  const owned = isOwned(h.id);
+                  const level = storeHero?.level ?? 1;
 
                   return (
                     <HeroCard
@@ -378,6 +388,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
                       cellSize={cellSize}
                       rarityBg={rarityBg[hr]}
                       selected={isInSquad}
+                      owned={owned}
+                      level={level}
                       onClick={() => handleHeroClick(h.id)}
                     />
                   );
