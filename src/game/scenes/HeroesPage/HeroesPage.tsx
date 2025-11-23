@@ -1,9 +1,10 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Stage } from '@pixi/react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { HeroDef, HeroId } from '@/game/heroes';
+import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
+
 
 type HeroCardProps = {
   hero: HeroDef;
@@ -96,40 +97,49 @@ type Props = {
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
 
-/**
- * Нормализация редкости:
- * - HERO статус если есть флаг isHero/rank=hero
- * - иначе берём базовую редкость из balance или legacy
- * - приводим старые/чужие значения к нашим 3 базовым
- */
+type BalanceLike = {
+  rarity?: unknown;
+};
+
+type HeroRuntime = HeroDef & {
+  // временные флаги без стора
+  isHero?: boolean;
+  rank?: unknown;
+
+  // legacy / runtime поля
+  rarity?: unknown;
+  balance?: BalanceLike;
+};
+
 const normalizeRarity = (r: unknown): UiRarity => {
   const v = String(r ?? '').toLowerCase();
 
-  // уже наши
   if (v === 'hero') return 'hero';
   if (v === 'legend') return 'legend';
   if (v === 'unique') return 'unique';
   if (v === 'rare') return 'rare';
 
-  // возможные старые/черновые значения
+  // старые/черновые значения → мапим в актуальные
   if (v === 'gold') return 'legend';
   if (v === 'purple') return 'unique';
   if (v === 'green') return 'rare';
 
-  // дефолт, чтобы никогда не падать
   return 'rare';
 };
 
-const getHeroRarity = (h: HeroDef): UiRarity => {
-  if ((h as any).isHero === true || (h as any).rank === 'hero') return 'hero';
-  const base = (h as any).balance?.rarity ?? (h as any).rarity;
+const getHeroRarity = (hero: HeroDef): UiRarity => {
+  const h = hero as HeroRuntime;
+
+  if (h.isHero === true || String(h.rank ?? '').toLowerCase() === 'hero') {
+    return 'hero';
+  }
+
+  const base = h.balance?.rarity ?? h.rarity;
   return normalizeRarity(base);
 };
 
-// порядок групп
 const rarityOrder: UiRarity[] = ['hero', 'legend', 'unique', 'rare'];
 
-// фоны
 const rarityBg: Record<UiRarity, string> = {
   hero: '#f1c40f',
   legend: '#e74d3d',
@@ -138,13 +148,12 @@ const rarityBg: Record<UiRarity, string> = {
 };
 
 const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) => {
+  // eslint-disable-next-line no-undef
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!rootRef.current) return;
-
     const update = () => {
       if (!rootRef.current) return;
       const r = rootRef.current.getBoundingClientRect();
@@ -153,12 +162,19 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
 
     update();
 
-    const resizeObserver = new ResizeObserver(update);
-    resizeObserver.observe(rootRef.current);
+    // ResizeObserver через window, чтобы eslint не ругался
+    const RO = window.ResizeObserver;
+    // eslint-disable-next-line no-undef
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (RO && rootRef.current) {
+      resizeObserver = new RO(update);
+      resizeObserver.observe(rootRef.current);
+    }
 
     window.addEventListener('resize', update);
     return () => {
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', update);
     };
   }, []);
@@ -270,8 +286,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
                 hero={hero}
                 cellSize={cellSize}
                 rarityBg={rarityBg[rar]}
-                selected={true}
-                showName={true}
+                selected
+                showName
                 onClick={() => onChangeSquad(squad.filter((x) => x !== id))}
               />
             );
@@ -289,7 +305,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
           right: 0,
           bottom: 0,
           overflowY: 'auto',
-          padding: padding,
+          padding,
           boxSizing: 'border-box',
         }}
       >
