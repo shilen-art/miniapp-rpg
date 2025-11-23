@@ -3,7 +3,7 @@ import { Stage } from '@pixi/react';
 import { useTranslation } from 'react-i18next';
 
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
-import { HeroDef, HeroId, Rarity } from '@/game/heroes';
+import { HeroDef, HeroId } from '@/game/heroes';
 
 type HeroCardProps = {
   hero: HeroDef;
@@ -24,6 +24,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
 }) => {
   const idle = hero.sprites.idle;
   const HERO_SHIFT = { x: -8, y: -10 };
+
   return (
     <div
       onClick={onClick}
@@ -93,11 +94,47 @@ type Props = {
   onChangeSquad: (next: HeroId[]) => void;
 };
 
-const rarityOrder: Rarity[] = ['legend', 'unique', 'rare'];
-const rarityBg: Record<Rarity, string> = {
-  legend: '#e74c3c',
+type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
+
+/**
+ * Нормализация редкости:
+ * - HERO статус если есть флаг isHero/rank=hero
+ * - иначе берём базовую редкость из balance или legacy
+ * - приводим старые/чужие значения к нашим 3 базовым
+ */
+const normalizeRarity = (r: unknown): UiRarity => {
+  const v = String(r ?? '').toLowerCase();
+
+  // уже наши
+  if (v === 'hero') return 'hero';
+  if (v === 'legend') return 'legend';
+  if (v === 'unique') return 'unique';
+  if (v === 'rare') return 'rare';
+
+  // возможные старые/черновые значения
+  if (v === 'gold') return 'legend';
+  if (v === 'purple') return 'unique';
+  if (v === 'green') return 'rare';
+
+  // дефолт, чтобы никогда не падать
+  return 'rare';
+};
+
+const getHeroRarity = (h: HeroDef): UiRarity => {
+  if ((h as any).isHero === true || (h as any).rank === 'hero') return 'hero';
+  const base = (h as any).balance?.rarity ?? (h as any).rarity;
+  return normalizeRarity(base);
+};
+
+// порядок групп
+const rarityOrder: UiRarity[] = ['hero', 'legend', 'unique', 'rare'];
+
+// фоны
+const rarityBg: Record<UiRarity, string> = {
+  hero: '#f1c40f',
+  legend: '#e74d3d',
   unique: '#9b59b6',
-  rare: '#3498db',
+  rare: '#3498dc',
 };
 
 const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) => {
@@ -127,8 +164,18 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
   }, []);
 
   const groups = useMemo(() => {
-    const map: Record<Rarity, HeroDef[]> = { legend: [], unique: [], rare: [] };
-    heroes.forEach((h) => map[h.rarity].push(h));
+    const map: Record<UiRarity, HeroDef[]> = {
+      hero: [],
+      legend: [],
+      unique: [],
+      rare: [],
+    };
+
+    heroes.forEach((h) => {
+      const rar = getHeroRarity(h);
+      map[rar].push(h);
+    });
+
     return map;
   }, [heroes]);
 
@@ -139,7 +186,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
 
   const handleHeroClick = (heroId: HeroId) => {
     const isInSquad = squad.includes(heroId);
-    
+
     if (isInSquad) {
       onChangeSquad(squad.filter((id) => id !== heroId));
     } else if (squad.length < 4) {
@@ -211,18 +258,21 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-          {squad.map(id => {
-            const hero = heroes.find(h => h.id === id);
+          {squad.map((id) => {
+            const hero = heroes.find((h) => h.id === id);
             if (!hero) return null;
+
+            const rar = getHeroRarity(hero);
+
             return (
               <HeroCard
                 key={id}
                 hero={hero}
                 cellSize={cellSize}
-                rarityBg={rarityBg[hero.rarity]}
+                rarityBg={rarityBg[rar]}
                 selected={true}
                 showName={true}
-                onClick={() => onChangeSquad(squad.filter(x => x !== id))}
+                onClick={() => onChangeSquad(squad.filter((x) => x !== id))}
               />
             );
           })}
@@ -243,42 +293,48 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
           boxSizing: 'border-box',
         }}
       >
-        {rarityOrder.map((rar) => (
-          <div key={rar} style={{ marginBottom: 14 }}>
-            <div
-              style={{
-                color: '#fff',
-                fontWeight: 800,
-                margin: '6px 0 8px',
-              }}
-            >
-              {t(`heroes.rarity.${rar}`)}
-            </div>
+        {rarityOrder.map((rar) => {
+          const list = groups[rar];
+          if (!list || list.length === 0) return null;
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 10,
-              }}
-            >
-              {groups[rar].map((h) => {
-                const isInSquad = squad.includes(h.id);
+          return (
+            <div key={rar} style={{ marginBottom: 14 }}>
+              <div
+                style={{
+                  color: '#fff',
+                  fontWeight: 800,
+                  margin: '6px 0 8px',
+                }}
+              >
+                {t(`heroes.rarity.${rar}`, rar)}
+              </div>
 
-                return (
-                  <HeroCard
-                    key={h.id}
-                    hero={h}
-                    cellSize={cellSize}
-                    rarityBg={rarityBg[rar]}
-                    selected={isInSquad}
-                    onClick={() => handleHeroClick(h.id)}
-                  />
-                );
-              })}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 10,
+                }}
+              >
+                {list.map((h) => {
+                  const isInSquad = squad.includes(h.id);
+                  const hr = getHeroRarity(h);
+
+                  return (
+                    <HeroCard
+                      key={h.id}
+                      hero={h}
+                      cellSize={cellSize}
+                      rarityBg={rarityBg[hr]}
+                      selected={isInSquad}
+                      onClick={() => handleHeroClick(h.id)}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

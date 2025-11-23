@@ -3,7 +3,6 @@ import idlePngImportedViaUrl from './idle.png?url';
 export const heroConfig = {
   id: 'hot',
   name: 'Hot',
-  rarity: 'unique',
   owned: true,
 
   sprites: {
@@ -26,7 +25,4 @@ export const heroConfig = {
       offset?: { x: number; y: number };
     }
   },
-
-  skills: {},
-  statsBase: {},
 } as const;

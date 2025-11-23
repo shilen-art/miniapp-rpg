@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
-import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
+import { HEROES_REGISTRY, HeroId, HeroDef } from '@/game/heroes/registry';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
-import { HEROES_REGISTRY, HeroId } from '@/game/heroes';
 
 const App: React.FC = () => {
   const { user, contentSafeAreaInset } = useTelegramWebApp();
@@ -14,11 +14,9 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] =
-    useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
+  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
 
-  const heroes = useMemo(() => HEROES_REGISTRY, []);
-
+  // дефолтный отряд
   const [squad, setSquad] = useState<HeroId[]>([
     'shilen',
     'hot',
@@ -26,12 +24,16 @@ const App: React.FC = () => {
     'skeleton',
   ]);
 
+  const heroes = useMemo<HeroDef[]>(() => [...HEROES_REGISTRY], []);
+
   useEffect(() => {
     if (!user) return;
 
     const lang = detectLanguageFromTelegram(user.language_code);
     if (lang !== i18n.language) {
-      i18n.changeLanguage(lang).catch(() => {});
+      i18n.changeLanguage(lang).catch(() => {
+        // ignore language change errors
+      });
     }
   }, [user]);
 
@@ -45,10 +47,11 @@ const App: React.FC = () => {
         justifyContent: 'center',
       }}
     >
+      {/* общий контейнер с ограничением ширины */}
       <div
         style={{
           width: '100%',
-          maxWidth: '560px',
+          maxWidth: '780px',
           height: '100%',
           position: 'relative',
           margin: '0 auto',
@@ -64,6 +67,7 @@ const App: React.FC = () => {
           paddingLeft: inset.left,
         }}
       >
+        {/* build label */}
         <div
           style={{
             position: 'absolute',
@@ -98,6 +102,7 @@ const App: React.FC = () => {
           />
         )}
 
+        {/* Telegram user overlay */}
         {user && (
           <div
             style={{
