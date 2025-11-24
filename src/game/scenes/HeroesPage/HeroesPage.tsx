@@ -17,7 +17,6 @@ type HeroCardProps = {
   onNameClick?: () => void;
   showName?: boolean;
   owned: boolean;
-  level?: number;
 };
 
 const HeroCard: React.FC<HeroCardProps> = ({
@@ -96,20 +95,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
           >
             {hero.name}
           </div>
+          {/* статы под именем убраны (тестовые) */}
         </div>
       )}
     </div>
   );
 };
 
-type InitialTab = 'character' | 'inventory';
-
 type Props = {
   heroes: HeroDef[];
   squad: HeroId[];
   onBack: () => void;
   onChangeSquad: (next: HeroId[]) => void;
-  onOpenHeroDetails: (heroId: HeroId, initialTab?: InitialTab) => void; // <-- changed
+  onOpenHeroDetails: (heroId: HeroId, tab?: 'character' | 'inventory') => void;
 };
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
@@ -134,15 +132,9 @@ const normalizeRarity = (r: unknown): UiRarity => {
 
 const getHeroRarity = (hero: HeroDef, storeHero?: { isHero?: boolean }): UiRarity => {
   const h = hero as HeroRuntime;
-
-  if (
-    storeHero?.isHero === true ||
-    h.isHero === true ||
-    String(h.rank ?? '').toLowerCase() === 'hero'
-  ) {
+  if (storeHero?.isHero === true || h.isHero === true || String(h.rank ?? '').toLowerCase() === 'hero') {
     return 'hero';
   }
-
   const base = h.balance.rarity ?? h.rarity;
   return normalizeRarity(base);
 };
@@ -156,13 +148,7 @@ const rarityBg: Record<UiRarity, string> = {
   rare: '#3498dc',
 };
 
-const HeroesPage: React.FC<Props> = ({
-  heroes,
-  squad,
-  onBack,
-  onChangeSquad,
-  onOpenHeroDetails,
-}) => {
+const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onOpenHeroDetails }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
@@ -214,7 +200,6 @@ const HeroesPage: React.FC<Props> = ({
   const safeW = Math.max(1, stageSize.w);
   const cellSize = Math.min(160, Math.floor(safeW / 4) - 12);
   const padding = 12;
-  const bottomNavH = 72;
 
   const handleHeroClick = (heroId: HeroId) => {
     const isInSquad = squad.includes(heroId);
@@ -226,46 +211,49 @@ const HeroesPage: React.FC<Props> = ({
     }
   };
 
-  // first squad hero or first owned hero fallback
-  const fallbackHeroId: HeroId | undefined =
-    squad[0] ?? heroes.find((h) => isOwned(h.id))?.id;
+  const getPrimaryHeroId = (): HeroId | null => {
+    if (squad.length > 0) return squad[0];
+    const ownedFirst = heroes.find((h) => isOwned(h.id));
+    return ownedFirst?.id ?? null;
+  };
 
-  const openFallback = (tab: InitialTab) => {
-    if (!fallbackHeroId) return;
-    onOpenHeroDetails(fallbackHeroId, tab);
+  const openPrimary = (tab: 'character' | 'inventory') => {
+    const id = getPrimaryHeroId();
+    if (!id) return;
+    onOpenHeroDetails(id, tab);
   };
 
   return (
     <div
       ref={rootRef}
       style={{
-        position: 'relative',
         width: '100%',
         height: '100%',
         background: '#0b0d16',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxSizing: 'border-box',
       }}
     >
+      {/* Header (без кнопки back, как просил) */}
       <div
         style={{
-          padding: `${padding}px ${padding}px 8px`,
+          padding: '12px 12px 8px',
           display: 'flex',
           alignItems: 'center',
           gap: 8,
           flexShrink: 0,
         }}
       >
-        <div style={{ color: '#fff', fontWeight: 700 }}>
+        <div style={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>
           {t('heroes.title')}
         </div>
       </div>
 
+      {/* Squad section */}
       <div
         style={{
-          margin: `0 ${padding}px ${padding}px`,
+          margin: `0 ${padding}px`,
           background: 'rgba(255,255,255,0.06)',
           borderRadius: 14,
           padding: 10,
@@ -300,29 +288,18 @@ const HeroesPage: React.FC<Props> = ({
               />
             );
           })}
-
-          {Array.from({ length: Math.max(0, 4 - squad.length) }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              style={{
-                height: cellSize + 34,
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px dashed rgba(255,255,255,0.12)',
-              }}
-            />
-          ))}
         </div>
       </div>
 
+      {/* Scrollable heroes list */}
       <div
         className="scrollable"
         style={{
-          flex: 1,
           overflowY: 'auto',
           padding,
-          paddingBottom: bottomNavH + padding,
           boxSizing: 'border-box',
+          flex: 1,
+          minHeight: 0,
         }}
       >
         {rarityOrder.map((rar) => {
@@ -373,11 +350,12 @@ const HeroesPage: React.FC<Props> = ({
         })}
       </div>
 
+      {/* Bottom nav */}
       <HeroesNavBar
         activeTab="heroes"
         onBack={onBack}
-        onOpenCharacter={() => openFallback('character')}
-        onOpenInventory={() => openFallback('inventory')}
+        onOpenCharacter={() => openPrimary('character')}
+        onOpenInventory={() => openPrimary('inventory')}
         onOpenHeroes={undefined}
       />
     </div>

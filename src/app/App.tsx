@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,10 +13,14 @@ import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
-  const { user, contentSafeAreaInset } = useTelegramWebApp();
+  const { user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
-  const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
+  // ВАЖНО: для защиты от TG кнопок берем safeAreaInset
+  const inset =
+    safeAreaInset ??
+    contentSafeAreaInset ??
+    { top: 0, right: 0, bottom: 0, left: 0 };
 
   const [activeScene, setActiveScene] = useState<
     'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'
@@ -33,18 +36,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-
     const lang = detectLanguageFromTelegram(user.language_code);
     if (lang !== i18n.language) {
-      i18n.changeLanguage(lang).catch(() => {
-        // ignore language change errors
-      });
+      i18n.changeLanguage(lang).catch(() => {});
     }
   }, [user]);
-
-  const goMain = () => setActiveScene('mainPage');
-  const goHeroes = () => setActiveScene('heroesPage');
-  const goSummon = () => setActiveScene('summonPage');
 
   return (
     <div
@@ -56,7 +52,7 @@ const App: React.FC = () => {
         justifyContent: 'center',
       }}
     >
-      {/* общий контейнер с ограничением ширины */}
+      {/* общий контейнер */}
       <div
         style={{
           width: '100%',
@@ -75,11 +71,13 @@ const App: React.FC = () => {
           paddingLeft: inset.left,
         }}
       >
-        <div style={{ flexShrink: 0, padding: '8px 0' }}>
+        {/* Глобальная верхняя панель, обычный блок */}
+        <div style={{ padding: 8, boxSizing: 'border-box', flexShrink: 0 }}>
           <TopResourcesBar showCards={activeScene === 'summonPage'} />
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+        {/* Сцены */}
+        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
           {/* build label */}
           <div
             style={{
@@ -89,6 +87,7 @@ const App: React.FC = () => {
               fontSize: 10,
               color: '#ff5555',
               zIndex: 9999,
+              pointerEvents: 'none',
             }}
           >
             BUILD: TEST-123
@@ -102,22 +101,20 @@ const App: React.FC = () => {
             <MainPage
               heroes={heroes}
               squad={squad}
-              onOpenHeroes={goHeroes}
-              onOpenSummon={goSummon}
+              onOpenHeroes={() => setActiveScene('heroesPage')}
+              onOpenSummon={() => setActiveScene('summonPage')}
             />
           )}
 
           {activeScene === 'summonPage' && (
-            <SummonPage
-              onBack={() => setActiveScene('mainPage')}
-            />
+            <SummonPage onBack={() => setActiveScene('mainPage')} />
           )}
 
           {activeScene === 'heroesPage' && (
             <HeroesPage
               heroes={heroes}
               squad={squad}
-              onBack={goMain}
+              onBack={() => setActiveScene('mainPage')}
               onChangeSquad={setSquad}
               onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
                 setSelectedHeroId(heroId);
@@ -147,28 +144,30 @@ const App: React.FC = () => {
               initialTab={initialTab}
             />
           )}
-        </div>
 
-        {/* Telegram user overlay */}
-        {user && (
-          <div
-            style={{
-              position: 'absolute',
-              padding: '6px 10px',
-              borderRadius: 8,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              color: '#ffffff',
-              fontSize: 12,
-              maxWidth: '60%',
-              pointerEvents: 'none',
-            }}
-          >
-            {t('telegram.hi', {
-              name: user.first_name,
-              username: user.username ? ` (@${user.username})` : '',
-            })}
-          </div>
-        )}
+          {/* Telegram user overlay */}
+          {user && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                padding: '6px 10px',
+                borderRadius: 8,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                color: '#ffffff',
+                fontSize: 12,
+                maxWidth: '60%',
+                pointerEvents: 'none',
+              }}
+            >
+              {t('telegram.hi', {
+                name: user.first_name,
+                username: user.username ? ` (@${user.username})` : '',
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

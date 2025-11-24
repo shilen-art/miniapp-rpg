@@ -9,13 +9,14 @@ const TopResourcesBar: React.FC<{ showCards?: boolean }> = ({ showCards }) => {
   const { t } = useTranslation();
 
   const rootStyle: React.CSSProperties = {
+    width: '100%',
+    zIndex: 50,
     display: 'flex',
     gap: 8,
-    padding: '6px 8px',
+    padding: 6,
     borderRadius: 12,
     background: 'rgba(0,0,0,0.45)',
     pointerEvents: 'none',
-    width: '100%',
     boxSizing: 'border-box',
   };
 

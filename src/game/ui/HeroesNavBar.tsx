@@ -1,5 +1,7 @@
-// src/game/ui/HeroesNavBar.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { useTelegramWebApp } from '@/telegram';
 
 export type HeroesNavTab = 'character' | 'inventory' | 'heroes';
 
@@ -20,52 +22,53 @@ const HeroesNavBar: React.FC<Props> = ({
   onOpenHeroes,
   height = 72,
 }) => {
-  const TabButton: React.FC<{
-    label: string;
-    isActive: boolean;
-    onClick?: () => void;
-  }> = ({ label, isActive, onClick }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        height: '100%',
-        borderRadius: 12,
-        background: 'transparent',
-        border: 'none',
-        color: isActive ? '#F2C94C' : '#fff',
-        fontSize: 12,
-        fontWeight: 700,
-        cursor: onClick ? 'pointer' : 'default',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 4,
-        opacity: isActive ? 1 : 0.9,
-      }}
-    >
-      <div
+  const { t } = useTranslation();
+  const { contentSafeAreaInset } = useTelegramWebApp();
+  const extraSafeBottom = contentSafeAreaInset?.bottom ?? 0;
+
+  const tabBtn = (label: string, key: HeroesNavTab, onClick?: () => void) => {
+    const isActive = activeTab === key;
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={isActive ? undefined : onClick}
+        disabled={!onClick}
         style={{
-          width: 26,
-          height: 26,
-          borderRadius: 8,
-          background: isActive
-            ? 'rgba(242,201,76,0.25)'
-            : 'rgba(255,255,255,0.15)',
+          height: '100%',
+          borderRadius: 12,
+          background: 'transparent',
+          border: 'none',
+          color: isActive ? '#F2C94C' : '#fff',
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: !onClick || isActive ? 'default' : 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 4,
+          opacity: !onClick ? 0.5 : 1,
         }}
-      />
-      <span>{label}</span>
-    </button>
-  );
+      >
+        <div
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 8,
+            background: isActive
+              ? 'rgba(242,201,76,0.25)'
+              : 'rgba(255,255,255,0.15)',
+          }}
+        />
+        <span>{label}</span>
+      </button>
+    );
+  };
 
   return (
     <div
       style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
         height,
         background: 'rgba(20,20,20,0.9)',
         display: 'grid',
@@ -74,7 +77,8 @@ const HeroesNavBar: React.FC<Props> = ({
         gap: 6,
         padding: '6px 8px',
         boxSizing: 'border-box',
-        zIndex: 5,
+        flexShrink: 0,
+        paddingBottom: 6 + extraSafeBottom,
       }}
     >
       <button
@@ -95,21 +99,9 @@ const HeroesNavBar: React.FC<Props> = ({
         ←
       </button>
 
-      <TabButton
-        label="Персонаж"
-        isActive={activeTab === 'character'}
-        onClick={activeTab === 'character' ? undefined : onOpenCharacter}
-      />
-      <TabButton
-        label="Инвентарь"
-        isActive={activeTab === 'inventory'}
-        onClick={activeTab === 'inventory' ? undefined : onOpenInventory}
-      />
-      <TabButton
-        label="Герои"
-        isActive={activeTab === 'heroes'}
-        onClick={activeTab === 'heroes' ? undefined : onOpenHeroes}
-      />
+      {tabBtn(t('nav.character', 'Персонаж'), 'character', onOpenCharacter)}
+      {tabBtn(t('nav.inventory', 'Инвентарь'), 'inventory', onOpenInventory)}
+      {tabBtn(t('nav.heroes', 'Герои'), 'heroes', onOpenHeroes)}
     </div>
   );
 };

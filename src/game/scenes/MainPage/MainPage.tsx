@@ -1,8 +1,8 @@
-import { Stage, Container } from '@pixi/react';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { Container, Stage } from '@pixi/react';
 
-import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { HeroDef, HeroId } from '@/game/heroes';
+import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import MainNavBar from '@/game/ui/MainNavBar';
 import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
 import FirefliesLayer from '@/shared/effects/FirefliesLayer';
@@ -16,13 +16,12 @@ type Props = {
 };
 
 const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }) => {
+  // eslint-disable-next-line no-undef
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { contentSafeAreaInset } = useTelegramWebApp();
 
   useEffect(() => {
-    if (!rootRef.current) return;
-
     const update = () => {
       if (!rootRef.current) return;
       const r = rootRef.current.getBoundingClientRect();
@@ -32,6 +31,7 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
     update();
 
     const RO = window.ResizeObserver;
+    // eslint-disable-next-line no-undef
     let resizeObserver: ResizeObserver | null = null;
 
     if (RO && rootRef.current) {
@@ -54,17 +54,14 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
 
   const bottomNavHeight = 96;
   const extraSafeBottom = contentSafeAreaInset?.bottom ?? 0;
-  const navTotalHeight = bottomNavHeight + 16 + extraSafeBottom; // nav height + bottom margin + safe area
+  const navTotalHeight = bottomNavHeight + 16 + extraSafeBottom;
+
+  const safeW = Math.max(1, stageSize.w);
+  const safeH = Math.max(1, stageSize.h);
 
   const squadPositions = useMemo(() => {
-    const safeW = Math.max(1, stageSize.w);
-    const safeH = Math.max(1, stageSize.h);
     const visibleH = safeH - navTotalHeight;
-
-    // Keep the same relative spread in X, but adjust Y based on visible height
-    // Original Y positions were at 0.64-0.67 of full height
-    // Now place them relative to visibleH, keeping similar relative positions
-    const baseY = visibleH * 0.67; // Base Y position relative to visible area
+    const baseY = visibleH * 0.7;
 
     return [
       { x: safeW * 0.22, y: baseY },
@@ -72,45 +69,34 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
       { x: safeW * 0.60, y: baseY - visibleH * 0.03 },
       { x: safeW * 0.78, y: baseY },
     ];
-  }, [stageSize.w, stageSize.h, navTotalHeight]);
-
-  const safeW = Math.max(1, stageSize.w);
-  const safeH = Math.max(1, stageSize.h);
-
-  const rootStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-    overflow: 'hidden',
-  };
-
-  const bgStyle: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: `url(${mainBg})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  };
-
-  const stageStyle: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 1,
-    pointerEvents: 'none',
-  };
+  }, [safeW, safeH, navTotalHeight]);
 
   return (
-    <div ref={rootRef} style={rootStyle}>
-      {/* Background layer */}
-      <div style={bgStyle} />
+    <div
+      ref={rootRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url(${mainBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
 
-      {/* Pixi overlay: fireflies + squad */}
       <Stage
         width={safeW}
         height={safeH}
         options={{ backgroundAlpha: 0, antialias: true }}
-        style={stageStyle}
+        style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}
       >
         <FirefliesLayer width={safeW} height={safeH} count={18} />
 
@@ -121,10 +107,7 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
             if (!h || !p) return null;
 
             const idle = h.sprites.idle;
-
-            // left/right (0 and 3) → zIndex=2
-            // middle ones (1 and 2) → zIndex=1
-            const z = (i === 0 || i === 3) ? 2 : 1;
+            const z = i === 0 || i === 3 ? 2 : 1;
 
             return (
               <HeroIdleSprite
@@ -144,7 +127,6 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
         </Container>
       </Stage>
 
-      {/* Bottom navigation menu */}
       <MainNavBar
         activeTab="button1"
         onOpenSummon={onOpenSummon}
