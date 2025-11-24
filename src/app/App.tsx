@@ -16,11 +16,14 @@ const App: React.FC = () => {
   const { user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
-  // ВАЖНО: для защиты от TG кнопок берем safeAreaInset
-  const inset =
-    safeAreaInset ??
-    contentSafeAreaInset ??
-    { top: 0, right: 0, bottom: 0, left: 0 };
+  // FIX: приоритет contentSafeAreaInset (он реально защищает от TG-хедера/кнопок),
+  // safeAreaInset как fallback
+  const inset = {
+    top: contentSafeAreaInset?.top ?? safeAreaInset?.top ?? 0,
+    right: contentSafeAreaInset?.right ?? safeAreaInset?.right ?? 0,
+    bottom: contentSafeAreaInset?.bottom ?? safeAreaInset?.bottom ?? 0,
+    left: contentSafeAreaInset?.left ?? safeAreaInset?.left ?? 0,
+  };
 
   const [activeScene, setActiveScene] = useState<
     'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'

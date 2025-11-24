@@ -49,7 +49,7 @@ export interface TelegramWebApp {
   // lifecycle
   ready?: () => void;
 
-  // events (keep minimal typing, we don't use them heavily yet)
+  // events
   onEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
   offEvent?: (eventType: string, handler: (...args: any[]) => void) => void;
 
@@ -74,6 +74,7 @@ interface UseTelegramWebAppResult {
  * - Locks current orientation
  * - Sets header/background colors matching the game
  * - Exposes WebApp instance and current user
+ * - Listens to safe area / viewport changes
  */
 export function useTelegramWebApp(): UseTelegramWebAppResult {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
@@ -87,7 +88,6 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
     const tg = window.Telegram?.WebApp;
 
     if (!tg) {
-      // not in Telegram environment
       setWebApp(null);
       setUser(null);
       setSafeAreaInset(null);
@@ -97,34 +97,41 @@ export function useTelegramWebApp(): UseTelegramWebAppResult {
     }
 
     try {
-      // Maximize height inside Telegram
       tg.expand?.();
-
-      // Request true fullscreen (Bot API 8.0+)
       tg.requestFullscreen?.();
-
-      // Disable swipe-down closing / gestures
       tg.disableVerticalSwipes?.();
-
-      // Lock current orientation (portrait when user opened the app)
       tg.lockOrientation?.();
 
       // set Telegram Mini App colors to yellow for visual check
       tg.setHeaderColor?.('#ffff00');
       tg.setBackgroundColor?.('#ffff00');
 
-      // Signal to Telegram that the app UI is ready
       tg.ready?.();
 
-      // Save WebApp instance and user
       setWebApp(tg);
 
-      // read safe area insets from Telegram, if available
-      setSafeAreaInset(tg.safeAreaInset ?? null);
-      setContentSafeAreaInset(tg.contentSafeAreaInset ?? null);
+      const readInsets = () => {
+        setSafeAreaInset(tg.safeAreaInset ?? null);
+        setContentSafeAreaInset(tg.contentSafeAreaInset ?? null);
+      };
+
+      // initial read (before/after fullscreen might still be zero, but ok)
+      readInsets();
+
+      const handleSafeAreaChanged = () => readInsets();
+      const handleViewportChanged = () => readInsets();
+
+      // TG can update insets after expand/fullscreen → listen
+      tg.onEvent?.('safeAreaChanged', handleSafeAreaChanged);
+      tg.onEvent?.('viewportChanged', handleViewportChanged);
 
       setUser(tg.initDataUnsafe?.user ?? null);
       setIsReady(true);
+
+      return () => {
+        tg.offEvent?.('safeAreaChanged', handleSafeAreaChanged);
+        tg.offEvent?.('viewportChanged', handleViewportChanged);
+      };
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       console.error('Telegram WebApp init error', err);

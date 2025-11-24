@@ -61,7 +61,7 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
 
   const squadPositions = useMemo(() => {
     const visibleH = safeH - navTotalHeight;
-    const baseY = visibleH * 0.7;
+    const baseY = visibleH * 0.75;
 
     return [
       { x: safeW * 0.22, y: baseY },
