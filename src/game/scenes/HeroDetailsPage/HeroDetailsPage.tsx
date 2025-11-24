@@ -18,16 +18,13 @@ type EquipSlotKey = 'weapon' | 'helm' | 'armor' | 'boots' | 'nftSet';
 
 const normalizeRarity = (r: unknown): UiRarity => {
   const v = String(r ?? '').toLowerCase();
-
   if (v === 'hero') return 'hero';
   if (v === 'legend') return 'legend';
   if (v === 'unique') return 'unique';
   if (v === 'rare') return 'rare';
-
   if (v === 'gold') return 'legend';
   if (v === 'purple') return 'unique';
   if (v === 'green') return 'rare';
-
   return 'rare';
 };
 
@@ -40,27 +37,110 @@ const getHeroRarity = (hero: HeroDef, storeHero?: { isHero?: boolean }): UiRarit
 };
 
 const rarityLabels: Record<UiRarity, string> = {
-  hero: 'Hero',
-  legend: 'Legend',
-  unique: 'Unique',
-  rare: 'Rare',
+  hero: 'Герой',
+  legend: 'Легендарный',
+  unique: 'Уникальный',
+  rare: 'Редкий',
 };
 
-const rarityColors: Record<UiRarity, string> = {
-  hero: '#f1c40f',
-  legend: '#e74d3d',
-  unique: '#9b59b6',
-  rare: '#3498dc',
+const rarityBadgeColors: Record<UiRarity, string> = {
+  hero: '#F2C94C',
+  legend: '#EB5757',
+  unique: '#BB6BD9',
+  rare: '#6FCF97',
 };
 
-const EQUIP_SLOT_TYPES: EquipSlotKey[] = ['weapon', 'helm', 'armor', 'boots', 'nftSet'];
-
+// ONLY 4 slots now (no nftSet)
+const EQUIP_SLOT_TYPES: EquipSlotKey[] = ['weapon', 'helm', 'armor', 'boots'];
 const EQUIP_SLOT_LABELS: Record<EquipSlotKey, string> = {
-  weapon: 'Weapon',
-  helm: 'Helm',
-  armor: 'Armor',
-  boots: 'Boots',
-  nftSet: 'NFT Set',
+  weapon: 'Оружие',
+  helm: 'Шлем',
+  armor: 'Броня',
+  boots: 'Сапоги',
+  nftSet: 'NFT Сет',
+};
+
+const StarRating: React.FC<{ stars: number }> = ({ stars }) => {
+  const filled = Math.max(0, Math.min(5, stars));
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span
+          key={i}
+          style={{
+            fontSize: 16,
+            lineHeight: '16px',
+            color: i < filled ? '#F2C94C' : 'rgba(0,0,0,0.25)',
+          }}
+        >
+          {i < filled ? '★' : '☆'}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const EquipSlot: React.FC<{
+  label: string;
+  value?: string | null;
+  hasMatchingItem?: boolean;
+  onClick?: () => void;
+}> = ({ label, value, hasMatchingItem = false, onClick }) => {
+  const hasItem = !!value;
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        position: 'relative',
+        width: 70,
+        height: 70,
+        borderRadius: 10,
+        border: '2px solid #7AC87A',
+        background: hasItem ? 'rgba(122,200,122,0.10)' : 'rgba(122,200,122,0.05)',
+        color: '#1e2a1e',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '8px 10px',
+        textAlign: 'left',
+      }}
+    >
+      {hasMatchingItem && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: '#FF4D4D',
+          }}
+        />
+      )}
+      <div style={{ fontSize: 12, fontWeight: 800 }}>{label}</div>
+      <div style={{ fontSize: 11, opacity: 0.7 }}>{hasItem ? value : 'Пусто'}</div>
+    </button>
+  );
+};
+
+const StatBlock: React.FC<{ label: string; value: string | number }> = ({ label, value }) => {
+  return (
+    <div
+      style={{
+        width: 70,
+        height: 70,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: 4,
+      }}
+    >
+      <div style={{ fontSize: 14, color: '#111' }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 900, color: '#111' }}>{value}</div>
+    </div>
+  );
 };
 
 const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
@@ -80,7 +160,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
   const stars = storeHero?.stars ?? 0;
 
   const equipmentSlots = useMemo(() => {
-    return ((storeHero?.equipmentSlots ?? {}) as Partial<Record<EquipSlotKey, string | null>>);
+    return (storeHero?.equipmentSlots ?? {}) as Partial<Record<EquipSlotKey, string | null>>;
   }, [storeHero]);
 
   const baseStats = useMemo(() => {
@@ -90,8 +170,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
 
   const totalStats = useMemo(() => {
     if (!baseStats) return null;
-    // TODO(stage equipment): add equipment + set + research bonuses into total stats
-    return baseStats;
+    return baseStats; // TODO(stage equipment): add bonuses
   }, [baseStats]);
 
   const rarity = useMemo(() => {
@@ -105,35 +184,22 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
       const r = rootRef.current.getBoundingClientRect();
       setStageSize({ w: r.width, h: r.height });
     };
-
     update();
-
-    let resizeObserver: ResizeObserver | null = null;
+    let ro: ResizeObserver | null = null;
     if (rootRef.current && window.ResizeObserver) {
-      resizeObserver = new window.ResizeObserver(update);
-      resizeObserver.observe(rootRef.current);
+      ro = new window.ResizeObserver(update);
+      ro.observe(rootRef.current);
     }
-
     window.addEventListener('resize', update);
     return () => {
-      resizeObserver?.disconnect();
+      ro?.disconnect();
       window.removeEventListener('resize', update);
     };
   }, []);
 
   if (!hero) {
     return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          background: '#0b0d16',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-        }}
-      >
+      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
         Hero not found
       </div>
     );
@@ -141,420 +207,426 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
 
   const safeW = Math.max(1, stageSize.w);
   const safeH = Math.max(1, stageSize.h);
-  const padding = 12;
+  const pad = Math.max(10, Math.min(18, safeW * 0.035));
 
-  const heroSpriteSize = Math.min(300, safeW * 0.6, safeH * 0.4);
+  const topAreaH = Math.max(110, safeH * 0.16);
+  const bottomAreaH = Math.max(210, safeH * 0.26); // include nav
+
+  const centerAreaTop = topAreaH + 52;
+  const centerAreaBottom = bottomAreaH;
+  const centerAreaH = Math.max(220, safeH - centerAreaTop - centerAreaBottom);
+
+  const heroSpriteSize = Math.min(360, safeW * 0.52, centerAreaH * 0.9);
   const HERO_SHIFT = { x: -8, y: -10 };
   const idle = hero.sprites?.idle;
 
-  // XP calculation stub
-  // TODO(stage xp): implement proper XP calculation and max level
   const xpForNextLevel = 1000; // stub
   const xpPercent = owned ? Math.min(100, Math.floor((xp / xpForNextLevel) * 100)) : 0;
+  const power: number | null = null; // TODO(stage power)
 
-  // Power calculation stub
-  // TODO(stage power): implement power calculation
-  const power: number | null = null;
-
-  // Navigation prev/next stub
-  // TODO(stage heroes-nav): add prev/next navigation by owned heroes
-  const canGoPrev = false;
-  const canGoNext = false;
-  const handlePrev = () => {
-    // TODO(stage heroes-nav): implement prev navigation
-  };
-  const handleNext = () => {
-    // TODO(stage heroes-nav): implement next navigation
-  };
-
-  // Red dot indicator stub
-  const hasMatchingItem = false;
-  // TODO(stage inventory): show red dot when matching item exists in inventory
-
+  const hasMatchingItem = false; // TODO(stage inventory)
   const heroClass = (hero as any).balance?.class;
+
+  // Stats list (WITH attackInterval)
+  const statItems = totalStats
+    ? [
+        { key: 'attack', label: 'Атака', value: totalStats.attack },
+        { key: 'defense', label: 'Защита', value: totalStats.defense },
+        { key: 'hp', label: 'Здоровье', value: totalStats.hp },
+        { key: 'range', label: 'Дистанция атаки', value: totalStats.range },
+        { key: 'crit', label: 'Крит', value: `${getCritPercent(totalStats)}%` },
+        { key: 'ias', label: 'Скорость атаки', value: totalStats.attackInterval.toFixed(2) },
+      ]
+    : [];
 
   return (
     <div
       ref={rootRef}
       style={{
         position: 'relative',
-        width: '100%',
         height: '100%',
-        background: '#0b0d16',
-        overflow: 'hidden',
+        width: '100%',
+        background: '#0B0D16',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: pad,
+        boxSizing: 'border-box',
       }}
     >
-      {/* Header with back button */}
+      {/* MAIN CARD */}
       <div
         style={{
-          position: 'absolute',
-          top: padding,
-          left: padding,
-          right: padding,
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
+          position: 'relative',
+          width: '100%',
+          maxWidth: 760,
+          height: '100%',
+          borderRadius: 26,
+          background: '#E9E6FB',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.45)',
+          border: '4px solid #111',
+          overflow: 'hidden',
         }}
       >
-        <button
-          onClick={onBack}
+        {/* TOP AREA */}
+        <div
           style={{
-            height: 36,
-            padding: '0 12px',
-            borderRadius: 10,
-            border: 'none',
-            background: '#222',
-            color: '#fff',
-            cursor: 'pointer',
+            position: 'absolute',
+            inset: 0,
+            height: topAreaH,
+            padding: pad,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
           }}
         >
-          {t('heroes.back', 'Back')}
-        </button>
-      </div>
-
-      {/* Top zone: Name, Class, Rarity, Stars */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 60,
-          left: padding,
-          right: padding,
-          zIndex: 5,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div
-            style={{
-              color: '#fff',
-              fontSize: 24,
-              fontWeight: 700,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            }}
-          >
-            {hero.name}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: '#111' }}>{hero.name}</div>
+            {heroClass && <div style={{ fontSize: 16, fontWeight: 600, color: '#333' }}>{heroClass}</div>}
           </div>
 
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {heroClass && (
-              <div
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 8,
-                  background: 'rgba(255,255,255,0.1)',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'capitalize',
-                }}
-              >
-                {heroClass}
-              </div>
-            )}
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
-                padding: '4px 12px',
-                borderRadius: 8,
-                background: rarityColors[rarity],
+                background: rarityBadgeColors[rarity],
                 color: '#fff',
-                fontSize: 12,
-                fontWeight: 600,
+                fontSize: 13,
+                fontWeight: 900,
+                padding: '4px 8px',
+                borderRadius: 6,
+                textTransform: 'uppercase',
+                letterSpacing: 0.4,
               }}
             >
               {rarityLabels[rarity]}
             </div>
 
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>
-                {stars}/5
-              </span>
-              {/* TODO(stage stars): add star icons/visualization */}
-            </div>
+            <StarRating stars={stars} />
           </div>
         </div>
-      </div>
 
-      {/* Central zone: Hero sprite and Power */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
+        {/* POWER BADGE */}
         <div
           style={{
+            position: 'absolute',
+            top: topAreaH + 6,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#B98A34',
             color: '#fff',
-            fontSize: 16,
-            fontWeight: 700,
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            fontSize: 22,
+            fontWeight: 900,
+            padding: '8px 44px',
+            borderRadius: 6,
+            border: '3px solid #6D4A12',
+            boxShadow: '0 2px 0 rgba(0,0,0,0.25)',
+            zIndex: 3,
+            minWidth: 180,
+            textAlign: 'center',
           }}
         >
-          Power: {power !== null ? power : '—'}
+          {power ?? '—'}
         </div>
 
-        {owned && idle ? (
-          <div style={{ width: heroSpriteSize, height: heroSpriteSize, position: 'relative' }}>
-            <Stage
-              width={heroSpriteSize}
-              height={heroSpriteSize}
-              options={{ backgroundAlpha: 0 }}
-              style={{ position: 'absolute', inset: 0 }}
-            >
-              <HeroIdleSprite
-                src={idle.src}
-                frames={idle.frames}
-                frameSize={idle.frameSize}
-                columns={idle.columns}
-                x={(heroSpriteSize / 2) + HERO_SHIFT.x + (idle.offset?.x ?? 0)}
-                y={(heroSpriteSize / 2) + HERO_SHIFT.y + (idle.offset?.y ?? 0)}
-                scale={idle.scale ?? (heroSpriteSize / 256 * 1.5)}
-                speed={idle.speed ?? 0.28}
-              />
-            </Stage>
-          </div>
-        ) : (
+        {/* CENTER AREA (equip | hero | stats) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: centerAreaTop,
+            left: pad,
+            right: pad,
+            height: centerAreaH,
+            display: 'grid',
+            gridTemplateColumns: '120px 1fr 220px',
+            gap: pad * 1.1,
+            alignItems: 'stretch',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* LEFT: 4 vertical slots */}
           <div
             style={{
-              width: heroSpriteSize,
-              height: heroSpriteSize,
-              borderRadius: 8,
-              background: 'rgba(16, 4, 4, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: 14,
+              height: '60%',
+              display: 'grid',
+              gridTemplateRows: `repeat(${EQUIP_SLOT_TYPES.length}, 1fr)`,
+              gap: 10,
             }}
           >
-            {owned ? 'Idle not found' : 'Not owned'}
+            {EQUIP_SLOT_TYPES.map((slotType) => (
+              <EquipSlot
+                key={slotType}
+                label={EQUIP_SLOT_LABELS[slotType]}
+                value={equipmentSlots[slotType] ?? null}
+                hasMatchingItem={hasMatchingItem}
+                onClick={() => {
+                  // TODO(stage equipment)
+                }}
+              />
+            ))}
           </div>
-        )}
-      </div>
 
-      {/* Left column: Equipment slots */}
-      <div
-        style={{
-          position: 'absolute',
-          left: padding,
-          top: 180,
-          bottom: 120,
-          width: Math.min(200, safeW * 0.35),
-          zIndex: 5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}
-      >
-        <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-          Equipment
-        </div>
-
-        {EQUIP_SLOT_TYPES.map((slotType) => {
-          const slotValue = equipmentSlots[slotType];
-          const hasItem = !!slotValue;
-
-          return (
+          {/* CENTER: hero strictly centered */}
+          <div
+            style={{
+              height: '60%',
+              display: 'grid',
+              placeItems: 'center',
+            }}
+          >
             <div
-              key={slotType}
               style={{
-                position: 'relative',
-                padding: 12,
-                borderRadius: 10,
-                background: hasItem ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-                border: hasItem ? '2px solid rgba(255,255,255,0.2)' : '2px dashed rgba(255,255,255,0.1)',
-                cursor: 'pointer',
-                minHeight: 60,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-              onClick={() => {
-                // TODO(stage equipment): handle equipment slot click
+                width: heroSpriteSize,
+                height: heroSpriteSize,
+                display: 'grid',
+                placeItems: 'center',
               }}
             >
-              {hasMatchingItem && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: '#ff0000',
-                  }}
-                />
-              )}
-
-              <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                {EQUIP_SLOT_LABELS[slotType]}
-              </div>
-
-              {hasItem ? (
-                <div style={{ color: '#fff', fontSize: 10, opacity: 0.8 }}>{slotValue}</div>
+              {owned && idle ? (
+                <Stage
+                  width={heroSpriteSize}
+                  height={heroSpriteSize}
+                  options={{ backgroundAlpha: 0 }}
+                  style={{ width: heroSpriteSize, height: heroSpriteSize }}
+                >
+                  <HeroIdleSprite
+                    src={idle.src}
+                    frames={idle.frames}
+                    frameSize={idle.frameSize}
+                    columns={idle.columns}
+                    x={(heroSpriteSize / 2) + HERO_SHIFT.x + (idle.offset?.x ?? 0)}
+                    y={(heroSpriteSize / 2) + HERO_SHIFT.y + (idle.offset?.y ?? 0)}
+                    // standard size (scale=1 if not defined)
+                    scale={idle.scale ?? 1}
+                    speed={idle.speed ?? 0.28}
+                  />
+                </Stage>
               ) : (
-                <div style={{ color: '#fff', fontSize: 10, opacity: 0.5 }}>Empty</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>
+                  {owned ? 'Idle not found' : 'Not owned'}
+                </div>
               )}
             </div>
-          );
-        })}
-      </div>
-
-      {/* Right column: Stats */}
-      <div
-        style={{
-          position: 'absolute',
-          right: padding,
-          top: 180,
-          bottom: 120,
-          width: Math.min(200, safeW * 0.35),
-          zIndex: 5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-          Stats
-        </div>
-
-        {totalStats ? (
-          <>
-            <StatRow label="Attack" value={totalStats.attack} />
-            <StatRow label="HP" value={totalStats.hp} />
-            <StatRow label="Defense" value={totalStats.defense} />
-            <StatRow label="Range" value={totalStats.range} />
-            <StatRow label="Crit" value={`${getCritPercent(totalStats)}%`} />
-            <StatRow label="Attack Speed" value={totalStats.attackInterval.toFixed(2)} />
-          </>
-        ) : (
-          <div style={{ color: '#fff', opacity: 0.5, fontSize: 12 }}>No stats available</div>
-        )}
-      </div>
-
-      {/* Bottom: XP bar, Level, Prev/Next navigation */}
-      <div
-        style={{
-          position: 'absolute',
-          left: padding,
-          right: padding,
-          bottom: padding,
-          zIndex: 5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-              Level {level}
-            </div>
-            {owned && (
-              <div style={{ color: '#fff', fontSize: 12, opacity: 0.8 }}>
-                {xpPercent}%
-              </div>
-            )}
           </div>
 
-          {owned ? (
+          {/* RIGHT: stats stacked (label top, value under), same full height */}
+          <div
+            style={{
+              height: '60%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              paddingTop: 8,
+              paddingBottom: 8,
+            }}
+          >
+            {statItems.length ? (
+              statItems.map((s) => (
+                <StatBlock key={s.key} label={s.label} value={s.value} />
+              ))
+            ) : (
+              <div style={{ fontSize: 14, opacity: 0.7 }}>Нет данных</div>
+            )}
+          </div>
+        </div>
+
+        {/* BOTTOM GRAY ZONE */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: bottomAreaH,
+            background: '#E6E6E6',
+            borderTop: '3px solid rgba(0,0,0,0.15)',
+            padding: pad,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          {/* XP row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '36px 1fr 36px',
+              gap: 8,
+              alignItems: 'center',
+              marginTop: 4,
+            }}
+          >
+            <button
+              disabled
+              style={{
+                width: 36,
+                height: 26,
+                borderRadius: 8,
+                border: '2px solid rgba(0,0,0,0.2)',
+                background: '#DADADA',
+                opacity: 0.6,
+                cursor: 'not-allowed',
+                fontSize: 16,
+                fontWeight: 900,
+              }}
+            >
+              ←
+            </button>
+
             <div
               style={{
-                width: '100%',
-                height: 8,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.1)',
-                overflow: 'hidden',
                 position: 'relative',
+                height: 26,
+                borderRadius: 13,
+                background: '#FFF4B8',
+                border: '2px solid rgba(0,0,0,0.25)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 10px',
+                fontWeight: 900,
+                color: '#111',
               }}
             >
               <div
                 style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
                   width: `${xpPercent}%`,
-                  height: '100%',
-                  background: '#4CAF50',
-                  transition: 'width 0.3s ease',
+                  background: '#F2C94C',
                 }}
               />
+              <div style={{ position: 'relative', zIndex: 2, fontSize: 14 }}>Lvl {level}</div>
+              <div style={{ position: 'relative', zIndex: 2, marginLeft: 'auto', fontSize: 14 }}>
+                {owned ? `${xpPercent}%` : '0%'}
+              </div>
             </div>
-          ) : (
-            <div
+
+            <button
+              disabled
               style={{
-                width: '100%',
-                height: 8,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.05)',
+                width: 36,
+                height: 26,
+                borderRadius: 8,
+                border: '2px solid rgba(0,0,0,0.2)',
+                background: '#DADADA',
+                opacity: 0.6,
+                cursor: 'not-allowed',
+                fontSize: 16,
+                fontWeight: 900,
               }}
-            />
-          )}
-        </div>
+            >
+              →
+            </button>
+          </div>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          {/* Upgrade button 40% width */}
           <button
-            onClick={undefined}
-            disabled
+            onClick={() => {
+              // TODO(stage food): connect real food + upgrade
+            }}
             style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'rgba(255,255,255,0.05)',
-              color: 'rgba(255,255,255,0.3)',
-              cursor: 'not-allowed',
-              fontSize: 14,
-              fontWeight: 600,
+              marginTop: 6,
+              width: '40%',
+              minWidth: 220,
+              maxWidth: 360,
+              alignSelf: 'center',
+              height: 56,
+              borderRadius: 28,
+              border: '3px solid rgba(0,0,0,0.32)',
+              background: '#69C56A',
+              color: '#fff',
+              fontSize: 20,
+              fontWeight: 900,
+              letterSpacing: 0.5,
+              cursor: 'pointer',
+              boxShadow: '0 2px 0 rgba(0,0,0,0.18)',
             }}
           >
-            ← Prev
+            {t('heroes.upgrade', 'Улучшить')}
           </button>
 
-          <button
-            onClick={undefined}
-            disabled
+          <div
             style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'rgba(255,255,255,0.05)',
-              color: 'rgba(255,255,255,0.3)',
-              cursor: 'not-allowed',
-              fontSize: 14,
-              fontWeight: 600,
+              textAlign: 'center',
+              fontSize: 16,
+              fontWeight: 800,
+              color: '#111',
             }}
           >
-            Next →
-          </button>
+            513/100
+            {/* TODO(stage food): connect real food data */}
+          </div>
+
+          {/* Bottom navigation menu with back in it */}
+          <div
+            style={{
+              marginTop: 'auto',
+              height: 72,
+              background: 'rgba(20,20,20,0.9)',
+              borderRadius: 18,
+              display: 'grid',
+              gridTemplateColumns: '64px 1fr 1fr 1fr 1fr',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 8px',
+            }}
+          >
+            <button
+              onClick={onBack}
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: '50%',
+                border: '3px solid #111',
+                background: '#FFF',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 22,
+                cursor: 'pointer',
+              }}
+              aria-label="back"
+            >
+              ←
+            </button>
+
+            {(['Персонаж', 'Улучшение', 'Инвентарь', 'Герои'] as const).map((label, i) => (
+              <button
+                key={label}
+                type="button"
+                style={{
+                  height: '100%',
+                  borderRadius: 12,
+                  background: 'transparent',
+                  border: 'none',
+                  color: i === 0 ? '#F2C94C' : '#fff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'default',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 8,
+                    background: 'rgba(255,255,255,0.15)',
+                  }}
+                />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-type StatRowProps = {
-  label: string;
-  value: string | number;
-};
-
-const StatRow: React.FC<StatRowProps> = ({ label, value }) => {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '8px 12px',
-        borderRadius: 8,
-        background: 'rgba(255,255,255,0.05)',
-      }}
-    >
-      <span style={{ color: '#fff', fontSize: 12, opacity: 0.8 }}>{label}</span>
-      <span style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{value}</span>
     </div>
   );
 };
