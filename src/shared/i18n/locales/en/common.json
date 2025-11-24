@@ -8,6 +8,7 @@
       "wood": "Wood",
       "stone": "Stone",
       "food": "Food",
+      "meat": "Food",
       "rubies": "Rubies",
       "crystals": "Crystals"
     },
@@ -42,7 +43,7 @@
     }
   },
   "resources": {
-    "meat": "Meat",
+    "meat": "Food",
     "rubies": "Rubies",
     "crystals": "Crystals"
   }
