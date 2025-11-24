@@ -23,7 +23,7 @@ const App: React.FC = () => {
     { top: 0, right: 0, bottom: 0, left: 0 };
 
   // Прагматичный фикс: TG WebView не отдаёт нормальный top inset → добавляем вручную
-  const TG_EXTRA_TOP = webApp ? 24 : 0;
+  const TG_EXTRA_TOP = webApp ? 30 : 0;
 
   const [activeScene, setActiveScene] = useState<
     'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'
