@@ -33,6 +33,7 @@ export type HeroSkillDef = {
     type: 'damage' | 'heal' | 'buff' | 'debuff';
     value?: number;
     duration?: number;
+    stat?: keyof HeroBaseStats;
   }>;
 };
 
