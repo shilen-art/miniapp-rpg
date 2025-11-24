@@ -13,6 +13,7 @@ type HeroCardProps = {
   rarityBg: string;
   selected: boolean;
   onClick?: () => void;
+  onNameClick?: () => void;
   showName?: boolean;
   owned: boolean;
   level?: number;
@@ -24,6 +25,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
   rarityBg,
   selected,
   onClick,
+  onNameClick,
   showName = true,
   owned,
   level,
@@ -81,6 +83,10 @@ const HeroCard: React.FC<HeroCardProps> = ({
       {showName !== false && (
         <div>
           <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onNameClick?.();
+            }}
             style={{
               marginTop: 4,
               textAlign: 'center',
@@ -88,6 +94,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
               fontWeight: 700,
               color: '#fff',
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+              cursor: onNameClick ? 'pointer' : 'default',
             }}
           >
             {hero.name}
@@ -131,6 +138,7 @@ type Props = {
   squad: HeroId[];
   onBack: () => void;
   onChangeSquad: (next: HeroId[]) => void;
+  onOpenHeroDetails: (heroId: HeroId) => void;
 };
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
@@ -180,7 +188,7 @@ const rarityBg: Record<UiRarity, string> = {
   rare: '#3498dc',
 };
 
-const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) => {
+const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onOpenHeroDetails }) => {
   // eslint-disable-next-line no-undef
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
@@ -330,7 +338,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
                 showName
                 owned={owned}
                 level={level}
-                onClick={() => onChangeSquad(squad.filter((x) => x !== id))}
+                onClick={() => onOpenHeroDetails(id)}
+                onNameClick={() => handleHeroClick(id)}
               />
             );
           })}
@@ -390,7 +399,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad }) =
                       selected={isInSquad}
                       owned={owned}
                       level={level}
-                      onClick={() => handleHeroClick(h.id)}
+                      onClick={() => onOpenHeroDetails(h.id)}
+                      onNameClick={() => handleHeroClick(h.id)}
                     />
                   );
                 })}

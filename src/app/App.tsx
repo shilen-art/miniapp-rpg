@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { HEROES_REGISTRY, HeroDef } from '@/game/heroes/registry';
+import { HEROES_REGISTRY, HeroDef, HeroId } from '@/game/heroes/registry';
+import HeroDetailsPage from '@/game/scenes/HeroDetailsPage';
 import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
@@ -15,7 +16,8 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage'>('loading');
+  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage'>('loading');
+  const [selectedHeroId, setSelectedHeroId] = useState<HeroId | null>(null);
 
   const squad = useGameStore((s) => s.squad);
   const setSquad = useGameStore((s) => s.setSquad);
@@ -95,6 +97,17 @@ const App: React.FC = () => {
             squad={squad}
             onBack={() => setActiveScene('mainPage')}
             onChangeSquad={setSquad}
+            onOpenHeroDetails={(heroId) => {
+              setSelectedHeroId(heroId);
+              setActiveScene('heroDetailsPage');
+            }}
+          />
+        )}
+
+        {activeScene === 'heroDetailsPage' && selectedHeroId && (
+          <HeroDetailsPage
+            heroId={selectedHeroId}
+            onBack={() => setActiveScene('mainPage')}
           />
         )}
 
