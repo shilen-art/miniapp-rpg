@@ -12,7 +12,7 @@ const TopResourcesBar: React.FC<{ showCards?: boolean }> = ({ showCards }) => {
 
   // Отступ сверху только для Telegram Mini App
   const isTelegram = !!webApp;
-  const topOffset = isTelegram ? 24 : 8;
+  const topOffset = isTelegram ? 36 : 8;
 
   const rootStyle: React.CSSProperties = {
     position: 'absolute',
