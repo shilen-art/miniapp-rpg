@@ -33,6 +33,8 @@
     "title": "Герої",
     "back": "Назад",
     "squad": "Загін",
+    "levelUp": "Покращити",
+    "meatCost": "{{have}} / {{cost}} М'яса",
     "rarity": {
       "legend": "Легендарні",
       "unique": "Унікальні",

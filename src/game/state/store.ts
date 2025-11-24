@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { HeroId } from '@/game/heroes';
+import { canLevelUp, getMeatCostForNextLevel, levelUpInstance } from '@/game/progression/leveling';
 import { GameState, HeroInstance } from './types';
 
 const INITIAL_SQUAD: HeroId[] = ['shilen', 'hot', 'pasha', 'skeleton'];
@@ -39,6 +40,7 @@ type GameStore = GameState & {
   removeHero: (heroId: HeroId) => void;     // удаляет из heroes и из squad
   isOwned: (heroId: HeroId) => boolean;
   getHero: (heroId: HeroId) => HeroInstance | undefined;
+  levelUpHero: (heroId: HeroId) => boolean;
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -87,6 +89,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
   getHero: (heroId: HeroId) => {
     const { heroes } = get();
     return heroes[heroId];
+  },
+
+  levelUpHero: (heroId: HeroId) => {
+    const { heroes, resources } = get();
+    const hero = heroes[heroId];
+    if (!hero) return false;
+
+    const meatAvailable = resources.meat;
+    if (!canLevelUp(hero, meatAvailable)) return false;
+
+    const cost = getMeatCostForNextLevel(hero.level);
+    const nextHero = levelUpInstance(hero);
+
+    set({
+      heroes: {
+        ...heroes,
+        [heroId]: nextHero,
+      },
+      resources: {
+        ...resources,
+        meat: meatAvailable - cost,
+      },
+    });
+
+    return true;
   },
 }));
 

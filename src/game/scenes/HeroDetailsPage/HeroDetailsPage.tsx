@@ -150,6 +150,8 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
 
   const heroesOwnedMap = useGameStore((s) => s.heroes);
   const isOwned = useGameStore((s) => s.isOwned);
+  const meat = useGameStore((s) => s.resources.meat);
+  const levelUpHero = useGameStore((s) => s.levelUpHero);
 
   const hero = useMemo(() => HEROES_REGISTRY.find((h) => h.id === heroId), [heroId]);
   const storeHero = useMemo(() => heroesOwnedMap[heroId], [heroesOwnedMap, heroId]);
@@ -158,6 +160,9 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
   const level = storeHero?.level ?? 1;
   const xp = storeHero?.xp ?? 0;
   const stars = storeHero?.stars ?? 0;
+
+  const meatCost = useMemo(() => 5 * level, [level]);
+  const canUp = owned && meat >= meatCost;
 
   const equipmentSlots = useMemo(() => {
     return (storeHero?.equipmentSlots ?? {}) as Partial<Record<EquipSlotKey, string | null>>;
@@ -526,8 +531,10 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
           {/* Upgrade button 40% width */}
           <button
             onClick={() => {
-              // TODO(stage food): connect real food + upgrade
+              if (!owned) return;
+              levelUpHero(heroId);
             }}
+            disabled={!canUp}
             style={{
               marginTop: 6,
               width: '40%',
@@ -537,16 +544,17 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
               height: 56,
               borderRadius: 28,
               border: '3px solid rgba(0,0,0,0.32)',
-              background: '#69C56A',
+              background: canUp ? '#69C56A' : '#A0A0A0',
               color: '#fff',
               fontSize: 20,
               fontWeight: 900,
               letterSpacing: 0.5,
-              cursor: 'pointer',
+              cursor: canUp ? 'pointer' : 'not-allowed',
+              opacity: canUp ? 1 : 0.8,
               boxShadow: '0 2px 0 rgba(0,0,0,0.18)',
             }}
           >
-            {t('heroes.upgrade', 'Улучшить')}
+            {t('heroes.levelUp', 'Level Up')}
           </button>
 
           <div
@@ -557,8 +565,11 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
               color: '#111',
             }}
           >
-            513/100
-            {/* TODO(stage food): connect real food data */}
+            {t('heroes.meatCost', {
+              defaultValue: '{{have}} / {{cost}} Meat',
+              have: meat,
+              cost: meatCost,
+            })}
           </div>
 
           {/* Bottom navigation menu with back in it */}

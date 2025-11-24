@@ -33,6 +33,8 @@
     "title": "Heroes",
     "back": "Back",
     "squad": "Squad",
+    "levelUp": "Level Up",
+    "meatCost": "{{have}} / {{cost}} Meat",
     "rarity": {
       "legend": "Legendary",
       "unique": "Unique",
