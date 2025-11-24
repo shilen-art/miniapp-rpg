@@ -13,17 +13,14 @@ import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
-  const { webApp, user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
+  const { user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
-  // Базовые инcеты от Telegram (если они есть)
+  // Safe-area на общий контейнер
   const inset =
     safeAreaInset ??
     contentSafeAreaInset ??
     { top: 0, right: 0, bottom: 0, left: 0 };
-
-  // Прагматичный фикс: TG WebView не отдаёт нормальный top inset → добавляем вручную
-  const TG_EXTRA_TOP = webApp ? 30 : 0;
 
   const [activeScene, setActiveScene] = useState<
     'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'
@@ -45,6 +42,9 @@ const App: React.FC = () => {
     }
   }, [user]);
 
+  // Резерв под TopResourcesBar, чтобы он не перекрывал хедеры сцен
+  const TOP_BAR_RESERVE_H = 52;
+
   return (
     <div
       style={{
@@ -65,111 +65,118 @@ const App: React.FC = () => {
           margin: '0 auto',
           overflow: 'hidden',
           backgroundColor: '#050712',
-          display: 'flex',
-          flexDirection: 'column',
           boxSizing: 'border-box',
-          paddingTop: inset.top + TG_EXTRA_TOP,
+          paddingTop: inset.top,
           paddingRight: inset.right,
           paddingBottom: inset.bottom,
           paddingLeft: inset.left,
         }}
       >
-        {/* Глобальная верхняя панель */}
-        <div style={{ padding: 8, boxSizing: 'border-box', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          {/* TOP RESOURCES BAR как оверлей */}
           <TopResourcesBar showCards={activeScene === 'summonPage'} />
-        </div>
 
-        {/* Сцены */}
-        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-          {/* build label */}
+          {/* Контейнер контента сцен с небольшим paddingTop */}
           <div
             style={{
-              position: 'absolute',
-              bottom: 8,
-              right: 8,
-              fontSize: 10,
-              color: '#ff5555',
-              zIndex: 9999,
-              pointerEvents: 'none',
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              paddingTop: TOP_BAR_RESERVE_H,
+              boxSizing: 'border-box',
             }}
           >
-            BUILD: TEST-123
-          </div>
-
-          {activeScene === 'loading' && (
-            <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
-          )}
-
-          {activeScene === 'mainPage' && (
-            <MainPage
-              heroes={heroes}
-              squad={squad}
-              onOpenHeroes={() => setActiveScene('heroesPage')}
-              onOpenSummon={() => setActiveScene('summonPage')}
-            />
-          )}
-
-          {activeScene === 'summonPage' && (
-            <SummonPage onBack={() => setActiveScene('mainPage')} />
-          )}
-
-          {activeScene === 'heroesPage' && (
-            <HeroesPage
-              heroes={heroes}
-              squad={squad}
-              onBack={() => setActiveScene('mainPage')}
-              onChangeSquad={setSquad}
-              onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
-                setSelectedHeroId(heroId);
-                setPreviousScene('heroesPage');
-                setInitialTab(tab);
-                setActiveScene('heroDetailsPage');
-              }}
-            />
-          )}
-
-          {activeScene === 'heroDetailsPage' && selectedHeroId && (
-            <HeroDetailsPage
-              heroId={selectedHeroId}
-              onBack={() => {
-                if (previousScene) {
-                  setActiveScene(previousScene);
-                  setPreviousScene(null);
-                } else {
-                  setActiveScene('mainPage');
-                }
-                setInitialTab(undefined);
-              }}
-              onOpenHeroes={() => {
-                setPreviousScene('heroesPage');
-                setActiveScene('heroesPage');
-              }}
-              initialTab={initialTab}
-            />
-          )}
-
-          {/* Telegram user overlay */}
-          {user && (
+            {/* build label */}
             <div
               style={{
                 position: 'absolute',
-                top: 8,
-                left: 8,
-                padding: '6px 10px',
-                borderRadius: 8,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: '#ffffff',
-                fontSize: 12,
-                maxWidth: '60%',
+                bottom: 8,
+                right: 8,
+                fontSize: 10,
+                color: '#ff5555',
+                zIndex: 9999,
                 pointerEvents: 'none',
               }}
             >
-              {t('telegram.hi', {
-                name: user.first_name,
-                username: user.username ? ` (@${user.username})` : '',
-              })}
+              BUILD: TEST-123
             </div>
-          )}
+
+            {activeScene === 'loading' && (
+              <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
+            )}
+
+            {activeScene === 'mainPage' && (
+              <MainPage
+                heroes={heroes}
+                squad={squad}
+                onOpenHeroes={() => setActiveScene('heroesPage')}
+                onOpenSummon={() => setActiveScene('summonPage')}
+              />
+            )}
+
+            {activeScene === 'summonPage' && (
+              <SummonPage onBack={() => setActiveScene('mainPage')} />
+            )}
+
+            {activeScene === 'heroesPage' && (
+              <HeroesPage
+                heroes={heroes}
+                squad={squad}
+                onBack={() => setActiveScene('mainPage')}
+                onChangeSquad={setSquad}
+                onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
+                  setSelectedHeroId(heroId);
+                  setPreviousScene('heroesPage');
+                  setInitialTab(tab);
+                  setActiveScene('heroDetailsPage');
+                }}
+              />
+            )}
+
+            {activeScene === 'heroDetailsPage' && selectedHeroId && (
+              <HeroDetailsPage
+                heroId={selectedHeroId}
+                onBack={() => {
+                  if (previousScene) {
+                    setActiveScene(previousScene);
+                    setPreviousScene(null);
+                  } else {
+                    setActiveScene('mainPage');
+                  }
+                  setInitialTab(undefined);
+                }}
+                onOpenHeroes={() => {
+                  setPreviousScene('heroesPage');
+                  setActiveScene('heroesPage');
+                }}
+                initialTab={initialTab}
+              />
+            )}
+
+            {/* Telegram user overlay */}
+            {user && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  color: '#ffffff',
+                  fontSize: 12,
+                  maxWidth: '60%',
+                  pointerEvents: 'none',
+                  zIndex: 60,
+                }}
+              >
+                {t('telegram.hi', {
+                  name: user.first_name,
+                  username: user.username ? ` (@${user.username})` : '',
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
