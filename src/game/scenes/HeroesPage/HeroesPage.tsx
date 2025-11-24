@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { useGameStore } from '@/game/state';
-import TopResourcesBar from '@/game/ui/TopResourcesBar';
 import HeroesNavBar from '@/game/ui/HeroesNavBar';
 
 type HeroCardProps = {
@@ -216,7 +215,6 @@ const HeroesPage: React.FC<Props> = ({
   const cellSize = Math.min(160, Math.floor(safeW / 4) - 12);
   const padding = 12;
   const bottomNavH = 72;
-  const TOP_BAR_H = 56;
 
   const handleHeroClick = (heroId: HeroId) => {
     const isInSquad = squad.includes(heroId);
@@ -251,12 +249,6 @@ const HeroesPage: React.FC<Props> = ({
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ position: 'relative', height: TOP_BAR_H, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <TopResourcesBar />
-        </div>
-      </div>
-
       <div
         style={{
           padding: `${padding}px ${padding}px 8px`,

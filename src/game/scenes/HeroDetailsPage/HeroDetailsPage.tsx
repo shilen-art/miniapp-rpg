@@ -7,7 +7,6 @@ import { getBaseStats, getCritPercent } from '@/game/heroes/calc';
 import { HEROES_REGISTRY, HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { useGameStore } from '@/game/state';
-import TopResourcesBar from '@/game/ui/TopResourcesBar';
 import HeroesNavBar from '@/game/ui/HeroesNavBar';
 
 type InitialTab = 'character' | 'inventory';
@@ -377,10 +376,9 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes, initia
     </div>
   );
 
-  const TOP_BAR_H = 56;
   const bottomNavH = 72;
   const heroSectionH =
-    safeH > 0 ? Math.max(220, (safeH - TOP_BAR_H - bottomNavH) * 0.65) : undefined;
+    safeH > 0 ? Math.max(220, (safeH - bottomNavH) * 0.65) : undefined;
 
   const navActive = activeTab === 'inventory' ? 'inventory' : 'character';
 
@@ -401,12 +399,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes, initia
         overflow: 'hidden',
       }}
     >
-      <div style={{ position: 'relative', height: TOP_BAR_H, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <TopResourcesBar />
-        </div>
-      </div>
-
       <div
         style={{
           height: heroSectionH,

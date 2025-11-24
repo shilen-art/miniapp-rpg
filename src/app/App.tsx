@@ -67,8 +67,7 @@ const App: React.FC = () => {
           overflow: 'hidden',
           backgroundColor: '#050712',
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
+          flexDirection: 'column',
           boxSizing: 'border-box',
           paddingTop: inset.top,
           paddingRight: inset.right,
@@ -76,75 +75,79 @@ const App: React.FC = () => {
           paddingLeft: inset.left,
         }}
       >
-        <TopResourcesBar showCards={activeScene === 'summonPage'} />
-
-        {/* build label */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            fontSize: 10,
-            color: '#ff5555',
-            zIndex: 9999,
-          }}
-        >
-          BUILD: TEST-123
+        <div style={{ flexShrink: 0, padding: '8px 0' }}>
+          <TopResourcesBar showCards={activeScene === 'summonPage'} />
         </div>
 
-        {activeScene === 'loading' && (
-          <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
-        )}
-
-        {activeScene === 'mainPage' && (
-          <MainPage
-            heroes={heroes}
-            squad={squad}
-            onOpenHeroes={goHeroes}
-            onOpenSummon={goSummon}
-          />
-        )}
-
-        {activeScene === 'summonPage' && (
-          <SummonPage
-            onBack={() => setActiveScene('mainPage')}
-          />
-        )}
-
-        {activeScene === 'heroesPage' && (
-          <HeroesPage
-            heroes={heroes}
-            squad={squad}
-            onBack={goMain}
-            onChangeSquad={setSquad}
-            onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
-              setSelectedHeroId(heroId);
-              setPreviousScene('heroesPage');
-              setInitialTab(tab);
-              setActiveScene('heroDetailsPage');
+        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+          {/* build label */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
+              fontSize: 10,
+              color: '#ff5555',
+              zIndex: 9999,
             }}
-          />
-        )}
+          >
+            BUILD: TEST-123
+          </div>
 
-        {activeScene === 'heroDetailsPage' && selectedHeroId && (
-          <HeroDetailsPage
-            heroId={selectedHeroId}
-            onBack={() => {
-              if (previousScene) {
-                setActiveScene(previousScene);
-                setPreviousScene(null);
-              } else {
-                setActiveScene('mainPage');
-              }
-              setInitialTab(undefined);
-            }}
-            onOpenHeroes={() => {
-              setPreviousScene('heroesPage');
-              setActiveScene('heroesPage');
-            }}
-            initialTab={initialTab}
-          />
-        )}
+          {activeScene === 'loading' && (
+            <LoadingPage onLoaded={() => setActiveScene('mainPage')} />
+          )}
+
+          {activeScene === 'mainPage' && (
+            <MainPage
+              heroes={heroes}
+              squad={squad}
+              onOpenHeroes={goHeroes}
+              onOpenSummon={goSummon}
+            />
+          )}
+
+          {activeScene === 'summonPage' && (
+            <SummonPage
+              onBack={() => setActiveScene('mainPage')}
+            />
+          )}
+
+          {activeScene === 'heroesPage' && (
+            <HeroesPage
+              heroes={heroes}
+              squad={squad}
+              onBack={goMain}
+              onChangeSquad={setSquad}
+              onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
+                setSelectedHeroId(heroId);
+                setPreviousScene('heroesPage');
+                setInitialTab(tab);
+                setActiveScene('heroDetailsPage');
+              }}
+            />
+          )}
+
+          {activeScene === 'heroDetailsPage' && selectedHeroId && (
+            <HeroDetailsPage
+              heroId={selectedHeroId}
+              onBack={() => {
+                if (previousScene) {
+                  setActiveScene(previousScene);
+                  setPreviousScene(null);
+                } else {
+                  setActiveScene('mainPage');
+                }
+                setInitialTab(undefined);
+              }}
+              onOpenHeroes={() => {
+                setPreviousScene('heroesPage');
+                setActiveScene('heroesPage');
+              }}
+              initialTab={initialTab}
+            />
+          )}
+        </div>
 
         {/* Telegram user overlay */}
         {user && (
