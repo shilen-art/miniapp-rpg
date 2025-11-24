@@ -8,11 +8,15 @@ import { HEROES_REGISTRY, HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { useGameStore } from '@/game/state';
 import TopResourcesBar from '@/game/ui/TopResourcesBar';
+import HeroesNavBar from '@/game/ui/HeroesNavBar';
+
+type InitialTab = 'character' | 'inventory';
 
 type Props = {
   heroId: HeroId;
   onBack: () => void;
-  onOpenHeroes?: () => void; // если не передали — упадем на onBack()
+  onOpenHeroes?: () => void; // from MainPage
+  initialTab?: InitialTab;
 };
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
@@ -152,12 +156,14 @@ const StatCell: React.FC<{ label: string; value: string | number }> = ({ label, 
   );
 };
 
-type BottomTab = 'character' | 'upgrade' | 'inventory' | 'heroes';
+type BottomTab = 'character' | 'upgrade' | 'inventory';
 
-const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
+const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes, initialTab }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
-  const [activeTab, setActiveTab] = useState<BottomTab>('character');
+  const [activeTab, setActiveTab] = useState<BottomTab>(
+    initialTab === 'inventory' ? 'inventory' : 'character'
+  );
   const { t } = useTranslation();
 
   const heroesOwnedMap = useGameStore((s) => s.heroes);
@@ -187,7 +193,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
 
   const totalStats = useMemo(() => {
     if (!baseStats) return null;
-    return baseStats; // TODO(stage equipment): add bonuses
+    return baseStats;
   }, [baseStats]);
 
   const rarity = useMemo(() => {
@@ -214,6 +220,11 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (initialTab === 'inventory') setActiveTab('inventory');
+    if (initialTab === 'character') setActiveTab('character');
+  }, [initialTab]);
+
   if (!hero) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
@@ -231,10 +242,10 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
   const HERO_SHIFT = { x: -8, y: -10 };
   const idle = hero.sprites?.idle;
 
-  const xpForNextLevel = 1000; // stub
+  const xpForNextLevel = 1000;
   const xpPercent = owned ? Math.min(100, Math.floor((xp / xpForNextLevel) * 100)) : 0;
-  const power: number | null = null; // TODO(stage power)
-  const hasMatchingItem = false; // TODO(stage inventory)
+  const power: number | null = null;
+  const hasMatchingItem = false;
   const heroClass = (hero as any).balance?.class;
 
   const statItems = totalStats
@@ -248,7 +259,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
       ]
     : [];
 
-  // --- FIX 2: centered + lower upgrade content ---
   const renderUpgradeBlock = () => (
     <div
       style={{
@@ -260,11 +270,10 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
         justifyContent: 'center',
         gap: 16,
         boxSizing: 'border-box',
-        paddingTop: 18, // опускаем чуть ниже
+        paddingTop: 18,
         paddingBottom: 10,
       }}
     >
-      {/* XP row */}
       <div
         style={{
           width: '100%',
@@ -274,20 +283,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           alignItems: 'center',
         }}
       >
-        <button
-          disabled
-          style={{
-            width: 36,
-            height: 26,
-            borderRadius: 8,
-            border: '2px solid rgba(0,0,0,0.2)',
-            background: '#DADADA',
-            opacity: 0.6,
-            cursor: 'not-allowed',
-            fontSize: 16,
-            fontWeight: 900,
-          }}
-        >
+        <button disabled style={{ width: 36, height: 26, borderRadius: 8, border: '2px solid rgba(0,0,0,0.2)', background: '#DADADA', opacity: 0.6, cursor: 'not-allowed', fontSize: 16, fontWeight: 900 }}>
           ←
         </button>
 
@@ -306,46 +302,20 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
             color: '#111',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: `${xpPercent}%`,
-              background: '#F2C94C',
-            }}
-          />
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${xpPercent}%`, background: '#F2C94C' }} />
           <div style={{ position: 'relative', zIndex: 2, fontSize: 14 }}>Lvl {level}</div>
           <div style={{ position: 'relative', zIndex: 2, marginLeft: 'auto', fontSize: 14 }}>
             {owned ? `${xpPercent}%` : '0%'}
           </div>
         </div>
 
-        <button
-          disabled
-          style={{
-            width: 36,
-            height: 26,
-            borderRadius: 8,
-            border: '2px solid rgba(0,0,0,0.2)',
-            background: '#DADADA',
-            opacity: 0.6,
-            cursor: 'not-allowed',
-            fontSize: 16,
-            fontWeight: 900,
-          }}
-        >
+        <button disabled style={{ width: 36, height: 26, borderRadius: 8, border: '2px solid rgba(0,0,0,0.2)', background: '#DADADA', opacity: 0.6, cursor: 'not-allowed', fontSize: 16, fontWeight: 900 }}>
           →
         </button>
       </div>
 
-      {/* centered button */}
       <button
-        onClick={() => {
-          if (!owned) return;
-          levelUpHero(heroId);
-        }}
+        onClick={() => owned && levelUpHero(heroId)}
         disabled={!canUp}
         style={{
           width: '40%',
@@ -367,15 +337,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
         {t('heroes.levelUp', 'Level Up')}
       </button>
 
-      {/* meat cost */}
-      <div
-        style={{
-          textAlign: 'center',
-          fontSize: 16,
-          fontWeight: 800,
-          color: '#111',
-        }}
-      >
+      <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 800, color: '#111' }}>
         {t('heroes.meatCost', {
           defaultValue: '{{have}} / {{cost}} Meat',
           have: meat,
@@ -388,7 +350,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
   const INVENTORY_COLS = 6;
   const INVENTORY_ROWS = 3;
 
-  // --- FIX 1: 6x3 squares, not huge ---
   const renderInventoryBlock = () => (
     <div
       style={{
@@ -405,7 +366,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           key={i}
           style={{
             width: '100%',
-            aspectRatio: '1 / 1', // квадрат
+            aspectRatio: '1 / 1',
             borderRadius: 8,
             border: '3px solid #7A4A1A',
             background: 'rgba(255,255,255,0.25)',
@@ -416,96 +377,15 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
     </div>
   );
 
-  const bottomTabs: Array<{ key: BottomTab; label: string; enabled?: boolean }> = [
-    { key: 'character', label: 'Персонаж', enabled: true },
-    { key: 'inventory', label: 'Инвентарь', enabled: true },
-    { key: 'heroes', label: 'Герои', enabled: true },
-    { key: 'upgrade', label: 'Улучшение', enabled: false },
-  ];
-
-  const renderBottomNav = () => (
-    <div
-      style={{
-        height: 72,
-        background: 'rgba(20,20,20,0.9)',
-        display: 'grid',
-        gridTemplateColumns: '64px 1fr 1fr 1fr',
-        alignItems: 'center',
-        gap: 6,
-        padding: '6px 8px',
-        boxSizing: 'border-box',
-        flexShrink: 0,
-      }}
-    >
-      <button
-        onClick={onBack}
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: '50%',
-          border: '3px solid #111',
-          background: '#FFF',
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: 22,
-          cursor: 'pointer',
-        }}
-        aria-label="back"
-      >
-        ←
-      </button>
-
-      {bottomTabs
-        .filter((t) => t.enabled)
-        .map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => {
-              if (tab.key === 'heroes') {
-                (onOpenHeroes ?? onBack)(); // FIX 3: кликабельно и ведёт на список героев
-                return;
-              }
-              setActiveTab(tab.key);
-            }}
-            style={{
-              height: '100%',
-              borderRadius: 12,
-              background: 'transparent',
-              border: 'none',
-              color: activeTab === tab.key ? '#F2C94C' : '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 4,
-              opacity: activeTab === tab.key ? 1 : 0.9,
-            }}
-          >
-            <div
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 8,
-                background:
-                  activeTab === tab.key
-                    ? 'rgba(242,201,76,0.25)'
-                    : 'rgba(255,255,255,0.15)',
-              }}
-            />
-            <span>{tab.label}</span>
-          </button>
-        ))}
-    </div>
-  );
-
   const TOP_BAR_H = 56;
-  const BOTTOM_NAV_H = 72;
+  const bottomNavH = 72;
   const heroSectionH =
-    safeH > 0 ? Math.max(220, (safeH - TOP_BAR_H - BOTTOM_NAV_H) * 0.65) : undefined;
+    safeH > 0 ? Math.max(220, (safeH - TOP_BAR_H - bottomNavH) * 0.65) : undefined;
+
+  const navActive = activeTab === 'inventory' ? 'inventory' : 'character';
+
+  // IMPORTANT: Heroes button must always work.
+  const handleOpenHeroes = onOpenHeroes ?? onBack;
 
   return (
     <div
@@ -521,14 +401,12 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
         overflow: 'hidden',
       }}
     >
-      {/* 1) TOP RESOURCES BAR with reserved height */}
       <div style={{ position: 'relative', height: TOP_BAR_H, flexShrink: 0 }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <TopResourcesBar />
         </div>
       </div>
 
-      {/* 2) MAIN HERO SECTION (~65%) */}
       <div
         style={{
           height: heroSectionH,
@@ -540,7 +418,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           boxSizing: 'border-box',
         }}
       >
-        {/* 3) NAME / CLASS / RARITY / STARS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#111' }}>{hero.name}</div>
@@ -569,7 +446,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           </div>
         </div>
 
-        {/* 4) POWER BADGE */}
         <div
           style={{
             alignSelf: 'center',
@@ -588,7 +464,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           {power ?? '—'}
         </div>
 
-        {/* 5) HERO VISUAL BLOCK */}
         <div
           style={{
             marginTop: 2,
@@ -601,15 +476,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
             minHeight: 0,
           }}
         >
-          {/* left column */}
-          <div
-            style={{
-              display: 'grid',
-              gridAutoRows: 'min-content',
-              gap: 10,
-              justifyItems: 'center',
-            }}
-          >
+          <div style={{ display: 'grid', gridAutoRows: 'min-content', gap: 10, justifyItems: 'center' }}>
             {(['weapon', 'jewelry'] as EquipSlotKey[]).map((slotType) => (
               <EquipSlot
                 key={slotType}
@@ -617,21 +484,11 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
                 value={equipmentSlots[slotType] ?? null}
                 hasMatchingItem={hasMatchingItem}
                 size={slotSize}
-                onClick={() => {
-                  // TODO(stage equipment)
-                }}
               />
             ))}
           </div>
 
-          {/* hero center */}
-          <div
-            style={{
-              display: 'grid',
-              placeItems: 'center',
-              minHeight: heroSpriteSize,
-            }}
-          >
+          <div style={{ display: 'grid', placeItems: 'center', minHeight: heroSpriteSize }}>
             <div style={{ width: heroSpriteSize, height: heroSpriteSize }}>
               {owned && idle ? (
                 <Stage
@@ -659,15 +516,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
             </div>
           </div>
 
-          {/* right column */}
-          <div
-            style={{
-              display: 'grid',
-              gridAutoRows: 'min-content',
-              gap: 10,
-              justifyItems: 'center',
-            }}
-          >
+          <div style={{ display: 'grid', gridAutoRows: 'min-content', gap: 10, justifyItems: 'center' }}>
             {(['armor', 'boots'] as EquipSlotKey[]).map((slotType) => (
               <EquipSlot
                 key={slotType}
@@ -675,24 +524,12 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
                 value={equipmentSlots[slotType] ?? null}
                 hasMatchingItem={hasMatchingItem}
                 size={slotSize}
-                onClick={() => {
-                  // TODO(stage equipment)
-                }}
               />
             ))}
           </div>
         </div>
 
-        {/* 6) STATS HORIZONTAL BLOCK */}
-        <div
-          style={{
-            marginTop: 4,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: 6,
-            boxSizing: 'border-box',
-          }}
-        >
+        <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
           {statItems.length ? (
             statItems.map((s) => <StatCell key={s.key} label={s.label} value={s.value} />)
           ) : (
@@ -701,7 +538,6 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
         </div>
       </div>
 
-      {/* 3) BOTTOM GRAY ZONE (rest of space) */}
       <div
         style={{
           background: '#E6E6E6',
@@ -715,19 +551,18 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack, onOpenHeroes }) => {
           boxSizing: 'border-box',
         }}
       >
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-          }}
-        >
+        <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
           {activeTab === 'inventory' ? renderInventoryBlock() : renderUpgradeBlock()}
         </div>
       </div>
 
-      {/* 4) BOTTOM NAVIGATION */}
-      {renderBottomNav()}
+      <HeroesNavBar
+        activeTab={navActive}
+        onBack={onBack}
+        onOpenCharacter={() => setActiveTab('character')}
+        onOpenInventory={() => setActiveTab('inventory')}
+        onOpenHeroes={handleOpenHeroes}
+      />
     </div>
   );
 };

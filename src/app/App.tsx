@@ -20,6 +20,8 @@ const App: React.FC = () => {
 
   const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'>('loading');
   const [selectedHeroId, setSelectedHeroId] = useState<HeroId | null>(null);
+  const [previousScene, setPreviousScene] = useState<'mainPage' | 'heroesPage' | null>(null);
+  const [initialTab, setInitialTab] = useState<'character' | 'inventory' | undefined>(undefined);
 
   const squad = useGameStore((s) => s.squad);
   const setSquad = useGameStore((s) => s.setSquad);
@@ -106,8 +108,10 @@ const App: React.FC = () => {
             squad={squad}
             onBack={() => setActiveScene('mainPage')}
             onChangeSquad={setSquad}
-            onOpenHeroDetails={(heroId: HeroId) => {
+            onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
               setSelectedHeroId(heroId);
+              setPreviousScene('heroesPage');
+              setInitialTab(tab);
               setActiveScene('heroDetailsPage');
             }}
           />
@@ -116,7 +120,20 @@ const App: React.FC = () => {
         {activeScene === 'heroDetailsPage' && selectedHeroId && (
           <HeroDetailsPage
             heroId={selectedHeroId}
-            onBack={() => setActiveScene('mainPage')}
+            onBack={() => {
+              if (previousScene) {
+                setActiveScene(previousScene);
+                setPreviousScene(null);
+              } else {
+                setActiveScene('mainPage');
+              }
+              setInitialTab(undefined);
+            }}
+            onOpenHeroes={() => {
+              setPreviousScene('heroesPage');
+              setActiveScene('heroesPage');
+            }}
+            initialTab={initialTab}
           />
         )}
 

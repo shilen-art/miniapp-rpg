@@ -1,11 +1,13 @@
+// src/game/scenes/HeroesPage/HeroesPage.tsx
 import { Stage } from '@pixi/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { getBaseStats, getCritPercent } from '@/game/heroes/calc';
 import { HeroDef, HeroId } from '@/game/heroes';
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { useGameStore } from '@/game/state';
+import TopResourcesBar from '@/game/ui/TopResourcesBar';
+import HeroesNavBar from '@/game/ui/HeroesNavBar';
 
 type HeroCardProps = {
   hero: HeroDef;
@@ -28,13 +30,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onNameClick,
   showName = true,
   owned,
-  level,
 }) => {
   const idle = hero.sprites.idle;
   const HERO_SHIFT = { x: -8, y: -10 };
-  const stats = owned ? getBaseStats(hero, level ?? 1) : null;
-  const hasStats = owned;
-  const extraHeight = hasStats ? 20 : 0;
 
   return (
     <div
@@ -45,7 +43,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
         padding: 6,
         cursor: 'pointer',
         border: selected ? '3px solid #fff' : 'none',
-        height: showName ? cellSize + 34 + extraHeight : cellSize + 12,
+        height: showName ? cellSize + 34 : cellSize + 12,
         boxSizing: 'border-box',
       }}
     >
@@ -99,79 +97,50 @@ const HeroCard: React.FC<HeroCardProps> = ({
           >
             {hero.name}
           </div>
-          {hasStats && stats && (
-            <>
-              <div
-                style={{
-                  marginTop: 2,
-                  textAlign: 'center',
-                  fontSize: 10,
-                  color: '#fff',
-                  opacity: 0.9,
-                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                }}
-              >
-                ATK {stats.attack} • HP {stats.hp} • DEF {stats.defense}
-              </div>
-              <div
-                style={{
-                  marginTop: 2,
-                  textAlign: 'center',
-                  fontSize: 10,
-                  color: '#fff',
-                  opacity: 0.9,
-                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                }}
-              >
-                CRIT {getCritPercent(stats)}% • RNG {stats.range}
-              </div>
-            </>
-          )}
         </div>
       )}
     </div>
   );
 };
 
+type InitialTab = 'character' | 'inventory';
+
 type Props = {
   heroes: HeroDef[];
   squad: HeroId[];
   onBack: () => void;
   onChangeSquad: (next: HeroId[]) => void;
-  onOpenHeroDetails: (heroId: HeroId) => void;
+  onOpenHeroDetails: (heroId: HeroId, initialTab?: InitialTab) => void; // <-- changed
 };
 
 type UiRarity = 'hero' | 'legend' | 'unique' | 'rare';
 
 type HeroRuntime = HeroDef & {
-  // временные флаги без стора
   isHero?: boolean;
   rank?: unknown;
-
-  // legacy поле (если где-то осталась старая rarity)
   rarity?: unknown;
 };
 
 const normalizeRarity = (r: unknown): UiRarity => {
   const v = String(r ?? '').toLowerCase();
-
   if (v === 'hero') return 'hero';
   if (v === 'legend') return 'legend';
   if (v === 'unique') return 'unique';
   if (v === 'rare') return 'rare';
-
-  // старые/черновые значения → мапим в актуальные
   if (v === 'gold') return 'legend';
   if (v === 'purple') return 'unique';
   if (v === 'green') return 'rare';
-
   return 'rare';
 };
 
 const getHeroRarity = (hero: HeroDef, storeHero?: { isHero?: boolean }): UiRarity => {
   const h = hero as HeroRuntime;
 
-  if (storeHero?.isHero === true || h.isHero === true || String(h.rank ?? '').toLowerCase() === 'hero') {
+  if (
+    storeHero?.isHero === true ||
+    h.isHero === true ||
+    String(h.rank ?? '').toLowerCase() === 'hero'
+  ) {
     return 'hero';
   }
 
@@ -188,8 +157,13 @@ const rarityBg: Record<UiRarity, string> = {
   rare: '#3498dc',
 };
 
-const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onOpenHeroDetails }) => {
-  // eslint-disable-next-line no-undef
+const HeroesPage: React.FC<Props> = ({
+  heroes,
+  squad,
+  onBack,
+  onChangeSquad,
+  onOpenHeroDetails,
+}) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
@@ -206,9 +180,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
 
     update();
 
-    // ResizeObserver через window, чтобы eslint не ругался
     const RO = window.ResizeObserver;
-    // eslint-disable-next-line no-undef
     let resizeObserver: ResizeObserver | null = null;
 
     if (RO && rootRef.current) {
@@ -243,7 +215,8 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
   const safeW = Math.max(1, stageSize.w);
   const cellSize = Math.min(160, Math.floor(safeW / 4) - 12);
   const padding = 12;
-  const topSquadHeight = cellSize + 60;
+  const bottomNavH = 72;
+  const TOP_BAR_H = 56;
 
   const handleHeroClick = (heroId: HeroId) => {
     const isInSquad = squad.includes(heroId);
@@ -255,6 +228,15 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
     }
   };
 
+  // first squad hero or first owned hero fallback
+  const fallbackHeroId: HeroId | undefined =
+    squad[0] ?? heroes.find((h) => isOwned(h.id))?.id;
+
+  const openFallback = (tab: InitialTab) => {
+    if (!fallbackHeroId) return;
+    onOpenHeroDetails(fallbackHeroId, tab);
+  };
+
   return (
     <div
       ref={rootRef}
@@ -264,54 +246,39 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
         height: '100%',
         background: '#0b0d16',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Header */}
+      <div style={{ position: 'relative', height: TOP_BAR_H, flexShrink: 0 }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <TopResourcesBar />
+        </div>
+      </div>
+
       <div
         style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          right: 12,
-          zIndex: 2,
+          padding: `${padding}px ${padding}px 8px`,
           display: 'flex',
           alignItems: 'center',
           gap: 8,
+          flexShrink: 0,
         }}
       >
-        <button
-          onClick={onBack}
-          style={{
-            height: 36,
-            padding: '0 12px',
-            borderRadius: 10,
-            border: 'none',
-            background: '#222',
-            color: '#fff',
-            cursor: 'pointer',
-          }}
-        >
-          {t('heroes.back')}
-        </button>
-
         <div style={{ color: '#fff', fontWeight: 700 }}>
           {t('heroes.title')}
         </div>
       </div>
 
-      {/* Squad section */}
       <div
         style={{
-          position: 'absolute',
-          top: 60,
-          left: padding,
-          right: padding,
-          height: topSquadHeight,
+          margin: `0 ${padding}px ${padding}px`,
           background: 'rgba(255,255,255,0.06)',
           borderRadius: 14,
           padding: 10,
           boxSizing: 'border-box',
-          zIndex: 1,
+          flexShrink: 0,
         }}
       >
         <div style={{ color: '#fff', fontWeight: 700, marginBottom: 8 }}>
@@ -326,7 +293,6 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
             const storeHero = heroesOwnedMap[id];
             const rar = getHeroRarity(hero, storeHero);
             const owned = isOwned(id);
-            const level = storeHero?.level ?? 1;
 
             return (
               <HeroCard
@@ -337,26 +303,33 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
                 selected
                 showName
                 owned={owned}
-                level={level}
-                onClick={() => onOpenHeroDetails(id)}
+                onClick={() => onOpenHeroDetails(id, 'character')}
                 onNameClick={() => handleHeroClick(id)}
               />
             );
           })}
+
+          {Array.from({ length: Math.max(0, 4 - squad.length) }).map((_, i) => (
+            <div
+              key={`empty-${i}`}
+              style={{
+                height: cellSize + 34,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px dashed rgba(255,255,255,0.12)',
+              }}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Scrollable heroes list */}
       <div
         className="scrollable"
         style={{
-          position: 'absolute',
-          top: 60 + topSquadHeight + 12,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          flex: 1,
           overflowY: 'auto',
           padding,
+          paddingBottom: bottomNavH + padding,
           boxSizing: 'border-box',
         }}
       >
@@ -388,7 +361,6 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
                   const storeHero = heroesOwnedMap[h.id];
                   const hr = getHeroRarity(h, storeHero);
                   const owned = isOwned(h.id);
-                  const level = storeHero?.level ?? 1;
 
                   return (
                     <HeroCard
@@ -398,8 +370,7 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
                       rarityBg={rarityBg[hr]}
                       selected={isInSquad}
                       owned={owned}
-                      level={level}
-                      onClick={() => onOpenHeroDetails(h.id)}
+                      onClick={() => onOpenHeroDetails(h.id, 'character')}
                       onNameClick={() => handleHeroClick(h.id)}
                     />
                   );
@@ -409,6 +380,14 @@ const HeroesPage: React.FC<Props> = ({ heroes, squad, onBack, onChangeSquad, onO
           );
         })}
       </div>
+
+      <HeroesNavBar
+        activeTab="heroes"
+        onBack={onBack}
+        onOpenCharacter={() => openFallback('character')}
+        onOpenInventory={() => openFallback('inventory')}
+        onOpenHeroes={undefined}
+      />
     </div>
   );
 };
