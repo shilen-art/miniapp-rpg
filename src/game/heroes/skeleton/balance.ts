@@ -18,14 +18,22 @@ export const heroBalance: HeroBalance = {
   },
   skills: [
     {
+      id: 'auto_attack',
+      name: 'Auto Attack',
+      cooldown: 0,
+      targetRule: 'enemyFront',
+      scaling: { from: 'attack', mult: 1.0, add: 0 }, // TODO(balance)
+      effects: [{ type: 'damage' }],
+    },
+    {
       id: 'dark_ritual_heal',
       name: 'Dark Ritual',
-      cooldown: 7, // TODO(balance): group-heal cooldown
-      targetRule: 'allyLowestHp', // NOTE: enum is single-ally, but by id we'll treat as AoE heal later
+      cooldown: 7, // TODO(balance)
+      targetRule: 'allyLowestHp', // group heal later by id
       effects: [
         {
           type: 'heal',
-          value: 0.10, // 10% of target max HP (interpretation for future battle)
+          value: 0.10, // 10% max HP per ally (later)
         },
       ],
     },

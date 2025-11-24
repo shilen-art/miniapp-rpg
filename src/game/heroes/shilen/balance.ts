@@ -1,7 +1,7 @@
 import { HeroBalance } from '../types';
 
 export const heroBalance: HeroBalance = {
-  class: 'warrior',
+  class: 'ranger',
   rarity: 'legend',
   statsBase: {
     attack: 25,
@@ -17,13 +17,21 @@ export const heroBalance: HeroBalance = {
   },
   skills: [
     {
+      id: 'auto_attack',
+      name: 'Auto Attack',
+      cooldown: 0, // auto skill, real tempo uses statsBase.attackInterval
+      targetRule: 'enemyFront', // single target by default
+      scaling: { from: 'attack', mult: 1.0, add: 0 }, // TODO(balance): base auto multiplier
+      effects: [{ type: 'damage' }],
+    },
+    {
       id: 'triple_arrow_volley',
       name: 'Triple Arrow Volley',
-      cooldown: 6,
-      targetRule: 'enemyFront', // AoE later: all enemies
+      cooldown: 6, // TODO(balance)
+      targetRule: 'enemyFront', // AoE later: all enemies by id
       scaling: { from: 'attack', mult: 1.2 },
       effects: [
-        { type: 'damage' } // AoE: hits all enemies once (visual 3 arrows)
+        { type: 'damage' }, // AoE: hits all enemies once (visual 3 arrows)
       ],
     },
   ],

@@ -17,18 +17,20 @@ export const heroBalance: HeroBalance = {
   },
   skills: [
     {
+      id: 'auto_attack',
+      name: 'Auto Attack',
+      cooldown: 0,
+      targetRule: 'enemyFront',
+      scaling: { from: 'attack', mult: 1.0, add: 0 }, // TODO(balance)
+      effects: [{ type: 'damage' }],
+    },
+    {
       id: 'whirlwind_slash',
       name: 'Whirlwind Slash',
-      cooldown: 6, // TODO(balance): AoE skill cooldown
-      targetRule: 'enemyFront', // NOTE: enum has no "allEnemies"; treat as AoE by id later
-      scaling: {
-        from: 'attack',
-        mult: 1.1, // TODO(balance): damage multiplier from attack
-        add: 0,
-      },
-      effects: [
-        { type: 'damage' }, // AoE damage to all enemies once
-      ],
+      cooldown: 6, // TODO(balance)
+      targetRule: 'enemyFront', // AoE later by id
+      scaling: { from: 'attack', mult: 1.1, add: 0 }, // TODO(balance)
+      effects: [{ type: 'damage' }],
     },
   ],
 };

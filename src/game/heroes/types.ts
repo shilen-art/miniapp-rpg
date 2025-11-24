@@ -1,4 +1,4 @@
-export type HeroClass = 'tank' | 'warrior' | 'mage' | 'healer';
+export type HeroClass = 'tank' | 'warrior' | 'mage' | 'healer' | 'ranger';
 
 export type Rarity = 'legend' | 'unique' | 'rare' | 'hero';
 

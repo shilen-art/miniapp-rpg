@@ -17,16 +17,24 @@ export const heroBalance: HeroBalance = {
   },
   skills: [
     {
+      id: 'auto_attack',
+      name: 'Auto Attack',
+      cooldown: 0,
+      targetRule: 'enemyFront',
+      scaling: { from: 'attack', mult: 1.0, add: 0 }, // TODO(balance)
+      effects: [{ type: 'damage' }],
+    },
+    {
       id: 'dragon_shield',
       name: 'Dragon Shield',
-      cooldown: 8, // TODO(balance): cooldown in seconds for self-buff
-      targetRule: 'self', // cast only on self
+      cooldown: 8, // TODO(balance)
+      targetRule: 'self',
       effects: [
         {
           type: 'buff',
-          stat: 'defense',  // which stat is buffed
-          value: 0.5,       // +50% defense (multiplier)
-          duration: 5,      // TODO(balance): buff duration in seconds
+          stat: 'defense',
+          value: 0.5,  // +50% defense
+          duration: 5, // TODO(balance)
         },
       ],
     },
