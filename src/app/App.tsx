@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -18,7 +19,9 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'>('loading');
+  const [activeScene, setActiveScene] = useState<
+    'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'
+  >('loading');
   const [selectedHeroId, setSelectedHeroId] = useState<HeroId | null>(null);
   const [previousScene, setPreviousScene] = useState<'mainPage' | 'heroesPage' | null>(null);
   const [initialTab, setInitialTab] = useState<'character' | 'inventory' | undefined>(undefined);
@@ -38,6 +41,10 @@ const App: React.FC = () => {
       });
     }
   }, [user]);
+
+  const goMain = () => setActiveScene('mainPage');
+  const goHeroes = () => setActiveScene('heroesPage');
+  const goSummon = () => setActiveScene('summonPage');
 
   return (
     <div
@@ -93,20 +100,22 @@ const App: React.FC = () => {
           <MainPage
             heroes={heroes}
             squad={squad}
-            onOpenHeroes={() => setActiveScene('heroesPage')}
-            onOpenSummon={() => setActiveScene('summonPage')}
+            onOpenHeroes={goHeroes}
+            onOpenSummon={goSummon}
           />
         )}
 
         {activeScene === 'summonPage' && (
-          <SummonPage onBack={() => setActiveScene('mainPage')} />
+          <SummonPage
+            onBack={() => setActiveScene('mainPage')}
+          />
         )}
 
         {activeScene === 'heroesPage' && (
           <HeroesPage
             heroes={heroes}
             squad={squad}
-            onBack={() => setActiveScene('mainPage')}
+            onBack={goMain}
             onChangeSquad={setSquad}
             onOpenHeroDetails={(heroId: HeroId, tab?: 'character' | 'inventory') => {
               setSelectedHeroId(heroId);

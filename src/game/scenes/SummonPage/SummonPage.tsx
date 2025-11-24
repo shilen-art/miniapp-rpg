@@ -1,24 +1,25 @@
+// src/game/scenes/SummonPage/SummonPage.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useGameStore } from '@/game/state';
 import type { CardRevealResult } from '@/game/progression/recruitment';
+import { useTelegramWebApp } from '@/telegram';
 
 type Props = {
-  onBack: () => void;
+  onBack: () => void; // возвращает на главную
 };
 
 const SummonPage: React.FC<Props> = ({ onBack }) => {
   const { t } = useTranslation();
+  const { contentSafeAreaInset } = useTelegramWebApp();
   const cards = useGameStore((s) => s.cards);
   const openCard = useGameStore((s) => s.openCard);
   const [lastResults, setLastResults] = useState<CardRevealResult[]>([]);
 
   const handleOpenOne = () => {
     const result = openCard();
-    if (result) {
-      setLastResults([result]);
-    }
+    if (result) setLastResults([result]);
   };
 
   const handleOpenTen = () => {
@@ -28,10 +29,12 @@ const SummonPage: React.FC<Props> = ({ onBack }) => {
       const r = openCard();
       if (r) results.push(r);
     }
-    if (results.length) {
-      setLastResults(results);
-    }
+    if (results.length) setLastResults(results);
   };
+
+  const bottomBarHeight = 96;
+  const extraSafeBottom = contentSafeAreaInset?.bottom ?? 0;
+  const extraSafeTop = contentSafeAreaInset?.top ?? 0;
 
   const rootStyle: React.CSSProperties = {
     position: 'relative',
@@ -43,18 +46,47 @@ const SummonPage: React.FC<Props> = ({ onBack }) => {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 20,
-    padding: 20,
+    // резерв под нижний бар
+    padding: `calc(20px + ${extraSafeTop}px) 20px calc(20px + ${bottomBarHeight}px + ${extraSafeBottom}px + 16px)`,
     boxSizing: 'border-box',
   };
 
   const headerStyle: React.CSSProperties = {
     position: 'absolute',
-    top: 12,
+    top: 12 + extraSafeTop,
     left: 12,
     right: 12,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+    zIndex: 1,
+  };
+
+  const bottomBarStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16 + extraSafeBottom,
+    height: bottomBarHeight,
+    background: 'rgba(20,20,20,0.9)',
+    borderRadius: 20,
+    display: 'flex',
+    alignItems: 'center',
+    padding: 12,
+    zIndex: 2,
+    boxSizing: 'border-box',
+  };
+
+  const backBtnStyle: React.CSSProperties = {
+    width: 52,
+    height: 52,
+    borderRadius: '50%',
+    border: '3px solid #111',
+    background: '#FFF',
+    display: 'grid',
+    placeItems: 'center',
+    fontSize: 22,
+    cursor: 'pointer',
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -145,9 +177,15 @@ const SummonPage: React.FC<Props> = ({ onBack }) => {
           ))}
         </div>
       )}
+
+      {/* Bottom bar with only back button */}
+      <div style={bottomBarStyle}>
+        <button onClick={onBack} style={backBtnStyle} aria-label="back">
+          ←
+        </button>
+      </div>
     </div>
   );
 };
 
 export default SummonPage;
-

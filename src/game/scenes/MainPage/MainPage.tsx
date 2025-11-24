@@ -1,11 +1,12 @@
 import { Stage, Container } from '@pixi/react';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import HeroIdleSprite from '@/game/heroes/_shared/HeroIdleSprite';
 import { HeroDef, HeroId } from '@/game/heroes';
+import MainNavBar from '@/game/ui/MainNavBar';
 import mainBg from '@/shared/assets/backgrounds/main_background.jpg';
 import FirefliesLayer from '@/shared/effects/FirefliesLayer';
+import { useTelegramWebApp } from '@/telegram';
 
 type Props = {
   heroes: HeroDef[];
@@ -17,7 +18,7 @@ type Props = {
 const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
-  const { t } = useTranslation();
+  const { contentSafeAreaInset } = useTelegramWebApp();
 
   useEffect(() => {
     if (!rootRef.current) return;
@@ -30,12 +31,17 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
 
     update();
 
-    const resizeObserver = new ResizeObserver(update);
-    resizeObserver.observe(rootRef.current);
+    const RO = window.ResizeObserver;
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (RO && rootRef.current) {
+      resizeObserver = new RO(update);
+      resizeObserver.observe(rootRef.current);
+    }
 
     window.addEventListener('resize', update);
     return () => {
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', update);
     };
   }, []);
@@ -46,15 +52,30 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
     return map;
   }, [heroes]);
 
-  const squadPositions = useMemo(
-    () => [
-      { x: stageSize.w * 0.22, y: stageSize.h * 0.67 },
-      { x: stageSize.w * 0.40, y: stageSize.h * 0.64 },
-      { x: stageSize.w * 0.60, y: stageSize.h * 0.64 },
-      { x: stageSize.w * 0.78, y: stageSize.h * 0.67 },
-    ],
-    [stageSize.w, stageSize.h]
-  );
+  const bottomNavHeight = 96;
+  const extraSafeBottom = contentSafeAreaInset?.bottom ?? 0;
+  const navTotalHeight = bottomNavHeight + 16 + extraSafeBottom; // nav height + bottom margin + safe area
+
+  const squadPositions = useMemo(() => {
+    const safeW = Math.max(1, stageSize.w);
+    const safeH = Math.max(1, stageSize.h);
+    const visibleH = safeH - navTotalHeight;
+
+    // Keep the same relative spread in X, but adjust Y based on visible height
+    // Original Y positions were at 0.64-0.67 of full height
+    // Now place them relative to visibleH, keeping similar relative positions
+    const baseY = visibleH * 0.67; // Base Y position relative to visible area
+
+    return [
+      { x: safeW * 0.22, y: baseY },
+      { x: safeW * 0.40, y: baseY - visibleH * 0.03 },
+      { x: safeW * 0.60, y: baseY - visibleH * 0.03 },
+      { x: safeW * 0.78, y: baseY },
+    ];
+  }, [stageSize.w, stageSize.h, navTotalHeight]);
+
+  const safeW = Math.max(1, stageSize.w);
+  const safeH = Math.max(1, stageSize.h);
 
   const rootStyle: React.CSSProperties = {
     width: '100%',
@@ -79,45 +100,6 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
     pointerEvents: 'none',
   };
 
-  const bottomNavStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-    height: 96,
-    background: 'rgba(20,20,20,0.9)',
-    borderRadius: 20,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    gap: 8,
-    zIndex: 2,
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 600,
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-  };
-
-  const iconStubStyle: React.CSSProperties = {
-    width: 36,
-    height: 36,
-    backgroundColor: '#666',
-    borderRadius: 10,
-  };
-
   return (
     <div ref={rootRef} style={rootStyle}>
       {/* Background layer */}
@@ -125,12 +107,12 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
 
       {/* Pixi overlay: fireflies + squad */}
       <Stage
-        width={stageSize.w}
-        height={stageSize.h}
+        width={safeW}
+        height={safeH}
         options={{ backgroundAlpha: 0, antialias: true }}
         style={stageStyle}
       >
-        <FirefliesLayer width={stageSize.w} height={stageSize.h} count={18} />
+        <FirefliesLayer width={safeW} height={safeH} count={18} />
 
         <Container sortableChildren>
           {squad.map((id, i) => {
@@ -163,29 +145,12 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }
       </Stage>
 
       {/* Bottom navigation menu */}
-      <div style={bottomNavStyle}>
-        {Array.from({ length: 5 }).map((_, i) => {
-          const isHeroes = i === 1;
-          const isSummon = i === 0 && onOpenSummon;
-          const label = isHeroes
-            ? t('main.nav.heroes')
-            : isSummon
-            ? 'Summon'
-            : t(`main.nav.button${i + 1}`);
-
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={isHeroes ? onOpenHeroes : isSummon ? onOpenSummon : undefined}
-              style={buttonStyle}
-            >
-              <div style={iconStubStyle} />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <MainNavBar
+        activeTab="button1"
+        onOpenSummon={onOpenSummon}
+        onOpenHeroes={onOpenHeroes}
+        height={bottomNavHeight}
+      />
     </div>
   );
 };
