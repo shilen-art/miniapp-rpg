@@ -13,17 +13,17 @@ import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
 const App: React.FC = () => {
-  const { user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
+  const { webApp, user, safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
-  // FIX: приоритет contentSafeAreaInset (он реально защищает от TG-хедера/кнопок),
-  // safeAreaInset как fallback
-  const inset = {
-    top: contentSafeAreaInset?.top ?? safeAreaInset?.top ?? 0,
-    right: contentSafeAreaInset?.right ?? safeAreaInset?.right ?? 0,
-    bottom: contentSafeAreaInset?.bottom ?? safeAreaInset?.bottom ?? 0,
-    left: contentSafeAreaInset?.left ?? safeAreaInset?.left ?? 0,
-  };
+  // Базовые инcеты от Telegram (если они есть)
+  const inset =
+    safeAreaInset ??
+    contentSafeAreaInset ??
+    { top: 0, right: 0, bottom: 0, left: 0 };
+
+  // Прагматичный фикс: TG WebView не отдаёт нормальный top inset → добавляем вручную
+  const TG_EXTRA_TOP = webApp ? 16 : 0;
 
   const [activeScene, setActiveScene] = useState<
     'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'
@@ -68,13 +68,13 @@ const App: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
-          paddingTop: inset.top,
+          paddingTop: inset.top + TG_EXTRA_TOP,
           paddingRight: inset.right,
           paddingBottom: inset.bottom,
           paddingLeft: inset.left,
         }}
       >
-        {/* Глобальная верхняя панель, обычный блок */}
+        {/* Глобальная верхняя панель */}
         <div style={{ padding: 8, boxSizing: 'border-box', flexShrink: 0 }}>
           <TopResourcesBar showCards={activeScene === 'summonPage'} />
         </div>
