@@ -45,7 +45,8 @@
   "resources": {
     "meat": "Food",
     "rubies": "Rubies",
-    "crystals": "Crystals"
+    "crystals": "Crystals",
+    "cards": "Cards"
   }
 }
 

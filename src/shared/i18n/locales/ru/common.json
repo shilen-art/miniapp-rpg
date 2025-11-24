@@ -45,7 +45,8 @@
   "resources": {
     "meat": "Еда",
     "rubies": "Рубины",
-    "crystals": "Кристаллы"
+    "crystals": "Кристаллы",
+    "cards": "Карточки"
   }
 }
 

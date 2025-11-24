@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/game/state';
 import { useTelegramWebApp } from '@/telegram';
 
-const TopResourcesBar: React.FC = () => {
+const TopResourcesBar: React.FC<{ showCards?: boolean }> = ({ showCards }) => {
   const resources = useGameStore((s) => s.resources);
+  const cards = useGameStore((s) => s.cards);
   const { safeAreaInset, contentSafeAreaInset } = useTelegramWebApp();
   const { t } = useTranslation();
 
-  // Calculate extra safe area (difference between safeAreaInset and contentSafeAreaInset)
-  // Since App already pads by contentSafeAreaInset, we only need to account for the extra
   const extraTop = Math.max((safeAreaInset?.top ?? 0) - (contentSafeAreaInset?.top ?? 0), 0);
   const extraLeft = Math.max((safeAreaInset?.left ?? 0) - (contentSafeAreaInset?.left ?? 0), 0);
   const extraRight = Math.max((safeAreaInset?.right ?? 0) - (contentSafeAreaInset?.right ?? 0), 0);
@@ -54,6 +53,12 @@ const TopResourcesBar: React.FC = () => {
       <div style={itemStyle}>
         💠 {t('resources.crystals')}: {resources.crystals}
       </div>
+
+      {showCards && (
+        <div style={itemStyle}>
+          🃏 {t('resources.cards', 'Cards')}: {cards}
+        </div>
+      )}
     </div>
   );
 };

@@ -26,5 +26,7 @@ export type GameState = {
     rubies: number;
     crystals: number;
   };
+  cards: number; // количество неоткрытых карточек в инвентаре
+  heroParts: Record<HeroId, number>; // части по каждому герою
 };
 

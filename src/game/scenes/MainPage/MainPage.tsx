@@ -11,9 +11,10 @@ type Props = {
   heroes: HeroDef[];
   squad: HeroId[];
   onOpenHeroes: () => void;
+  onOpenSummon?: () => void;
 };
 
-const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
+const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes, onOpenSummon }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const { t } = useTranslation();
@@ -165,15 +166,18 @@ const MainPage: React.FC<Props> = ({ heroes, squad, onOpenHeroes }) => {
       <div style={bottomNavStyle}>
         {Array.from({ length: 5 }).map((_, i) => {
           const isHeroes = i === 1;
+          const isSummon = i === 0 && onOpenSummon;
           const label = isHeroes
             ? t('main.nav.heroes')
+            : isSummon
+            ? 'Summon'
             : t(`main.nav.button${i + 1}`);
 
           return (
             <button
               key={i}
               type="button"
-              onClick={isHeroes ? onOpenHeroes : undefined}
+              onClick={isHeroes ? onOpenHeroes : isSummon ? onOpenSummon : undefined}
               style={buttonStyle}
             >
               <div style={iconStubStyle} />

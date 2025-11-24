@@ -6,6 +6,7 @@ import HeroDetailsPage from '@/game/scenes/HeroDetailsPage';
 import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
+import SummonPage from '@/game/scenes/SummonPage';
 import { useGameStore } from '@/game/state';
 import TopResourcesBar from '@/game/ui/TopResourcesBar';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
@@ -17,7 +18,7 @@ const App: React.FC = () => {
 
   const inset = contentSafeAreaInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
-  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage'>('loading');
+  const [activeScene, setActiveScene] = useState<'loading' | 'mainPage' | 'heroesPage' | 'heroDetailsPage' | 'summonPage'>('loading');
   const [selectedHeroId, setSelectedHeroId] = useState<HeroId | null>(null);
 
   const squad = useGameStore((s) => s.squad);
@@ -66,7 +67,7 @@ const App: React.FC = () => {
           paddingLeft: inset.left,
         }}
       >
-        <TopResourcesBar />
+        <TopResourcesBar showCards={activeScene === 'summonPage'} />
 
         {/* build label */}
         <div
@@ -91,7 +92,12 @@ const App: React.FC = () => {
             heroes={heroes}
             squad={squad}
             onOpenHeroes={() => setActiveScene('heroesPage')}
+            onOpenSummon={() => setActiveScene('summonPage')}
           />
+        )}
+
+        {activeScene === 'summonPage' && (
+          <SummonPage onBack={() => setActiveScene('mainPage')} />
         )}
 
         {activeScene === 'heroesPage' && (

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { HeroId } from '@/game/heroes';
 import { canLevelUp, getMeatCostForNextLevel, levelUpInstance } from '@/game/progression/leveling';
+import { openOneCard, type CardRevealResult } from '@/game/progression/recruitment';
+import { getPartsRequired, HERO_CARDS_CONFIG } from '@/game/progression/heroCardsConfig';
 import { GameState, HeroInstance } from './types';
 
 const INITIAL_SQUAD: HeroId[] = ['shilen', 'hot', 'pasha', 'skeleton'];
@@ -32,6 +34,13 @@ const initialState: GameState = {
     rubies: 0,
     crystals: 0,
   },
+  cards: 50,
+  heroParts: {
+    shilen: 0,
+    hot: 0,
+    pasha: 0,
+    skeleton: 0,
+  },
 };
 
 type GameStore = GameState & {
@@ -41,6 +50,10 @@ type GameStore = GameState & {
   isOwned: (heroId: HeroId) => boolean;
   getHero: (heroId: HeroId) => HeroInstance | undefined;
   levelUpHero: (heroId: HeroId) => boolean;
+  addCards: (amount: number) => void;
+  openCard: () => CardRevealResult | null;
+  craftHero: (heroId: HeroId) => boolean;
+  upgradeStars: (heroId: HeroId) => boolean;
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -110,6 +123,102 @@ export const useGameStore = create<GameStore>((set, get) => ({
       resources: {
         ...resources,
         meat: meatAvailable - cost,
+      },
+    });
+
+    return true;
+  },
+
+  addCards: (amount) => {
+    const { cards } = get();
+    set({ cards: cards + Math.max(0, amount) });
+  },
+
+  openCard: () => {
+    const { cards, heroes, heroParts } = get();
+    if (cards <= 0) return null;
+
+    const res = openOneCard();
+
+    // уменьшаем cards всегда
+    const nextCards = cards - 1;
+
+    if (res.kind === 'hero') {
+      const alreadyOwned = heroes[res.heroId] !== undefined;
+      const craftNeed = getPartsRequired(res.heroId);
+
+      if (alreadyOwned) {
+        // дубликат -> части в размере craftNeed
+        set({
+          cards: nextCards,
+          heroParts: {
+            ...heroParts,
+            [res.heroId]: (heroParts[res.heroId] ?? 0) + craftNeed,
+          },
+        });
+        return { kind: 'parts', heroId: res.heroId, amount: craftNeed };
+      }
+
+      // новый герой
+      set({
+        cards: nextCards,
+        heroes: {
+          ...heroes,
+          [res.heroId]: createInitialHero(res.heroId),
+        },
+      });
+      return res;
+    }
+
+    // res.kind === 'parts'
+    set({
+      cards: nextCards,
+      heroParts: {
+        ...heroParts,
+        [res.heroId]: (heroParts[res.heroId] ?? 0) + res.amount,
+      },
+    });
+    return res;
+  },
+
+  craftHero: (heroId) => {
+    const { heroes, heroParts } = get();
+    if (heroes[heroId]) return false;
+
+    const need = getPartsRequired(heroId);
+    const have = heroParts[heroId] ?? 0;
+    if (have < need) return false;
+
+    set({
+      heroes: { ...heroes, [heroId]: createInitialHero(heroId) },
+      heroParts: { ...heroParts, [heroId]: have - need },
+    });
+    return true;
+  },
+
+  upgradeStars: (heroId) => {
+    const { heroes, heroParts } = get();
+    const hero = heroes[heroId];
+    if (!hero) return false;
+
+    const maxStars = HERO_CARDS_CONFIG.maxStars;
+    if (hero.stars >= maxStars) return false;
+
+    const nextStar = hero.stars + 1;
+    const cost = HERO_CARDS_CONFIG.starUpgradeCost[nextStar - 1] ?? 0;
+    const have = heroParts[heroId] ?? 0;
+    if (have < cost) return false;
+
+    const isHero = nextStar >= maxStars;
+
+    set({
+      heroes: {
+        ...heroes,
+        [heroId]: { ...hero, stars: nextStar, isHero },
+      },
+      heroParts: {
+        ...heroParts,
+        [heroId]: have - cost,
       },
     });
 
