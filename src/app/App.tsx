@@ -97,7 +97,7 @@ const App: React.FC = () => {
             squad={squad}
             onBack={() => setActiveScene('mainPage')}
             onChangeSquad={setSquad}
-            onOpenHeroDetails={(heroId) => {
+            onOpenHeroDetails={(heroId: HeroId) => {
               setSelectedHeroId(heroId);
               setActiveScene('heroDetailsPage');
             }}
