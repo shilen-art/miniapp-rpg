@@ -27,7 +27,7 @@ const initialState: GameState = {
   resources: {
     wood: 0,
     stone: 0,
-    meat: 0,
+    meat: 1000,
     rubies: 0,
     crystals: 0,
   },

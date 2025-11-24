@@ -7,6 +7,7 @@ import HeroesPage from '@/game/scenes/HeroesPage/HeroesPage';
 import LoadingPage from '@/game/scenes/LoadingPage/LoadingPage';
 import MainPage from '@/game/scenes/MainPage/MainPage';
 import { useGameStore } from '@/game/state';
+import TopResourcesBar from '@/game/ui/TopResourcesBar';
 import i18n, { detectLanguageFromTelegram } from '@/shared/i18n';
 import { useTelegramWebApp } from '@/telegram';
 
@@ -65,6 +66,8 @@ const App: React.FC = () => {
           paddingLeft: inset.left,
         }}
       >
+        <TopResourcesBar />
+
         {/* build label */}
         <div
           style={{

@@ -38,6 +38,11 @@
       "unique": "Unique",
       "rare": "Rare"
     }
+  },
+  "resources": {
+    "meat": "Meat",
+    "rubies": "Rubies",
+    "crystals": "Crystals"
   }
 }
 
