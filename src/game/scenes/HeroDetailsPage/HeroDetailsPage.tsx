@@ -143,9 +143,12 @@ const StatBlock: React.FC<{ label: string; value: string | number }> = ({ label,
   );
 };
 
+type BottomTab = 'character' | 'upgrade' | 'inventory' | 'heroes';
+
 const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
+  const [activeTab, setActiveTab] = useState<BottomTab>('character');
   const { t } = useTranslation();
 
   const heroesOwnedMap = useGameStore((s) => s.heroes);
@@ -244,6 +247,239 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
       ]
     : [];
 
+  const renderUpgradeBlock = () => (
+    <>
+      {/* XP row */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '36px 1fr 36px',
+          gap: 8,
+          alignItems: 'center',
+          marginTop: 4,
+        }}
+      >
+        <button
+          disabled
+          style={{
+            width: 36,
+            height: 26,
+            borderRadius: 8,
+            border: '2px solid rgba(0,0,0,0.2)',
+            background: '#DADADA',
+            opacity: 0.6,
+            cursor: 'not-allowed',
+            fontSize: 16,
+            fontWeight: 900,
+          }}
+        >
+          ←
+        </button>
+
+        <div
+          style={{
+            position: 'relative',
+            height: 26,
+            borderRadius: 13,
+            background: '#FFF4B8',
+            border: '2px solid rgba(0,0,0,0.25)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 10px',
+            fontWeight: 900,
+            color: '#111',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `${xpPercent}%`,
+              background: '#F2C94C',
+            }}
+          />
+          <div style={{ position: 'relative', zIndex: 2, fontSize: 14 }}>Lvl {level}</div>
+          <div style={{ position: 'relative', zIndex: 2, marginLeft: 'auto', fontSize: 14 }}>
+            {owned ? `${xpPercent}%` : '0%'}
+          </div>
+        </div>
+
+        <button
+          disabled
+          style={{
+            width: 36,
+            height: 26,
+            borderRadius: 8,
+            border: '2px solid rgba(0,0,0,0.2)',
+            background: '#DADADA',
+            opacity: 0.6,
+            cursor: 'not-allowed',
+            fontSize: 16,
+            fontWeight: 900,
+          }}
+        >
+          →
+        </button>
+      </div>
+
+      {/* Upgrade button 40% width */}
+      <button
+        onClick={() => {
+          if (!owned) return;
+          levelUpHero(heroId);
+        }}
+        disabled={!canUp}
+        style={{
+          marginTop: 6,
+          width: '40%',
+          minWidth: 220,
+          maxWidth: 360,
+          alignSelf: 'center',
+          height: 56,
+          borderRadius: 28,
+          border: '3px solid rgba(0,0,0,0.32)',
+          background: canUp ? '#69C56A' : '#A0A0A0',
+          color: '#fff',
+          fontSize: 20,
+          fontWeight: 900,
+          letterSpacing: 0.5,
+          cursor: canUp ? 'pointer' : 'not-allowed',
+          opacity: canUp ? 1 : 0.8,
+          boxShadow: '0 2px 0 rgba(0,0,0,0.18)',
+        }}
+      >
+        {t('heroes.levelUp', 'Level Up')}
+      </button>
+
+      {/* meat cost text */}
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: 16,
+          fontWeight: 800,
+          color: '#111',
+        }}
+      >
+        {t('heroes.meatCost', {
+          defaultValue: '{{have}} / {{cost}} Meat',
+          have: meat,
+          cost: meatCost,
+        })}
+      </div>
+    </>
+  );
+
+  const INVENTORY_COLS = 6;
+  const INVENTORY_ROWS = 3; // как на скрине (18 слотов)
+
+  const renderInventoryBlock = () => (
+    <div
+      style={{
+        marginTop: 8,
+        display: 'grid',
+        gridTemplateColumns: `repeat(${INVENTORY_COLS}, 1fr)`,
+        gridAutoRows: '1fr',
+        gap: 10,
+        padding: '6px 4px',
+        flex: 1, // чтобы занять всё доступное место в серой зоне
+      }}
+    >
+      {Array.from({ length: INVENTORY_COLS * INVENTORY_ROWS }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            width: '100%',
+            aspectRatio: '1 / 1',
+            borderRadius: 8,
+            border: '3px solid #7A4A1A',      // коричневая рамка как на скрине
+            background: 'rgba(255,255,255,0.25)',
+            boxSizing: 'border-box',
+          }}
+        />
+      ))}
+    </div>
+  );
+
+  const bottomTabs: Array<{ key: BottomTab; label: string }> = [
+    { key: 'character', label: 'Персонаж' },
+    { key: 'upgrade', label: 'Улучшение' },
+    { key: 'inventory', label: 'Инвентарь' },
+    { key: 'heroes', label: 'Герои' },
+  ];
+
+  const renderBottomNav = () => (
+    <div
+      style={{
+        marginTop: 'auto',
+        height: 72,
+        background: 'rgba(20,20,20,0.9)',
+        borderRadius: 18,
+        display: 'grid',
+        gridTemplateColumns: '64px 1fr 1fr 1fr 1fr',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 8px',
+      }}
+    >
+      <button
+        onClick={onBack}
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: '50%',
+          border: '3px solid #111',
+          background: '#FFF',
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: 22,
+          cursor: 'pointer',
+        }}
+        aria-label="back"
+      >
+        ←
+      </button>
+
+      {bottomTabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => setActiveTab(tab.key)}
+          style={{
+            height: '100%',
+            borderRadius: 12,
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === tab.key ? '#F2C94C' : '#fff',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 4,
+            opacity: activeTab === tab.key ? 1 : 0.9,
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 8,
+              background: activeTab === tab.key
+                ? 'rgba(242,201,76,0.25)'
+                : 'rgba(255,255,255,0.15)',
+            }}
+          />
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div
       ref={rootRef}
@@ -264,7 +500,7 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 760,
+          maxWidth: 540,
           height: '100%',
           borderRadius: 26,
           background: '#E9E6FB',
@@ -452,190 +688,10 @@ const HeroDetailsPage: React.FC<Props> = ({ heroId, onBack }) => {
             gap: 10,
           }}
         >
-          {/* XP row */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '36px 1fr 36px',
-              gap: 8,
-              alignItems: 'center',
-              marginTop: 4,
-            }}
-          >
-            <button
-              disabled
-              style={{
-                width: 36,
-                height: 26,
-                borderRadius: 8,
-                border: '2px solid rgba(0,0,0,0.2)',
-                background: '#DADADA',
-                opacity: 0.6,
-                cursor: 'not-allowed',
-                fontSize: 16,
-                fontWeight: 900,
-              }}
-            >
-              ←
-            </button>
+          {activeTab === 'inventory' ? renderInventoryBlock() : renderUpgradeBlock()}
 
-            <div
-              style={{
-                position: 'relative',
-                height: 26,
-                borderRadius: 13,
-                background: '#FFF4B8',
-                border: '2px solid rgba(0,0,0,0.25)',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0 10px',
-                fontWeight: 900,
-                color: '#111',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: `${xpPercent}%`,
-                  background: '#F2C94C',
-                }}
-              />
-              <div style={{ position: 'relative', zIndex: 2, fontSize: 14 }}>Lvl {level}</div>
-              <div style={{ position: 'relative', zIndex: 2, marginLeft: 'auto', fontSize: 14 }}>
-                {owned ? `${xpPercent}%` : '0%'}
-              </div>
-            </div>
-
-            <button
-              disabled
-              style={{
-                width: 36,
-                height: 26,
-                borderRadius: 8,
-                border: '2px solid rgba(0,0,0,0.2)',
-                background: '#DADADA',
-                opacity: 0.6,
-                cursor: 'not-allowed',
-                fontSize: 16,
-                fontWeight: 900,
-              }}
-            >
-              →
-            </button>
-          </div>
-
-          {/* Upgrade button 40% width */}
-          <button
-            onClick={() => {
-              if (!owned) return;
-              levelUpHero(heroId);
-            }}
-            disabled={!canUp}
-            style={{
-              marginTop: 6,
-              width: '40%',
-              minWidth: 220,
-              maxWidth: 360,
-              alignSelf: 'center',
-              height: 56,
-              borderRadius: 28,
-              border: '3px solid rgba(0,0,0,0.32)',
-              background: canUp ? '#69C56A' : '#A0A0A0',
-              color: '#fff',
-              fontSize: 20,
-              fontWeight: 900,
-              letterSpacing: 0.5,
-              cursor: canUp ? 'pointer' : 'not-allowed',
-              opacity: canUp ? 1 : 0.8,
-              boxShadow: '0 2px 0 rgba(0,0,0,0.18)',
-            }}
-          >
-            {t('heroes.levelUp', 'Level Up')}
-          </button>
-
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: 16,
-              fontWeight: 800,
-              color: '#111',
-            }}
-          >
-            {t('heroes.meatCost', {
-              defaultValue: '{{have}} / {{cost}} Meat',
-              have: meat,
-              cost: meatCost,
-            })}
-          </div>
-
-          {/* Bottom navigation menu with back in it */}
-          <div
-            style={{
-              marginTop: 'auto',
-              height: 72,
-              background: 'rgba(20,20,20,0.9)',
-              borderRadius: 18,
-              display: 'grid',
-              gridTemplateColumns: '64px 1fr 1fr 1fr 1fr',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 8px',
-            }}
-          >
-            <button
-              onClick={onBack}
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                border: '3px solid #111',
-                background: '#FFF',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 22,
-                cursor: 'pointer',
-              }}
-              aria-label="back"
-            >
-              ←
-            </button>
-
-            {(['Персонаж', 'Улучшение', 'Инвентарь', 'Герои'] as const).map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                style={{
-                  height: '100%',
-                  borderRadius: 12,
-                  background: 'transparent',
-                  border: 'none',
-                  color: i === 0 ? '#F2C94C' : '#fff',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'default',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <div
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.15)',
-                  }}
-                />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
+          {/* bottom navigation menu stays always at bottom */}
+          {renderBottomNav()}
         </div>
       </div>
     </div>
