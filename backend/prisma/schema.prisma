@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  telegramId  BigInt    @unique
+  username    String?   @db.VarChar(255)
+  firstName   String    @db.VarChar(255)
+  lastName    String?   @db.VarChar(255)
+  locale      String?   @db.VarChar(10)
+
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @updatedAt
+
+  walletLinks WalletLink[]
+  betaAccess  BetaAccess[]
+}
+
+model WalletLink {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  chain          String    @db.VarChar(32)
+  address        String    @db.VarChar(255)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  lastVerifiedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@unique([chain, address])
+}
+
+model BetaAccess {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  reason    String    @db.VarChar(255)
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
